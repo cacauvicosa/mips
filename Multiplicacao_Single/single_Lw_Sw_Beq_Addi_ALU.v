@@ -11,22 +11,21 @@ module mips(
 	 wire [3:0] aluctrl;
 	 wire [1:0] aluop;	 
 	
+	 PC prog_counter(clk, new_pc, pc); // PC register
 	 assign pc_4 = pc+4; // pc+4  Adder
+	 InstructionMem instructionmem( pc>>2, instruction); // Instruction Memory	 
+	 assign signalextended = (instruction[15]) ? {16'hFFFF,instruction[15:0]}:{16'd0,instruction[15:0]} ;	
          assign shiftleft2 =  signalextended << 2; // Shift 
          assign add_pc_branch_target = pc_4 + shiftleft2;  // Target PC Adder
          assign and_branch = branch & zero; // AND branch and zero ALU output
          assign new_pc = (and_branch) ? add_pc_branch_target : pc_4; // new PC Mux
-         PC prog_counter(clk, new_pc, pc); // PC register
-	 InstructionMem instructionmem( pc>>2, instruction); // Instruction Memory	 
-	 ControlUnit uc(instruction[31:26], regdst, alusrc, memtoreg, regwrite, memread,
+         ControlUnit uc(instruction[31:26], regdst, alusrc, memtoreg, regwrite, memread,
 			 memwrite, branch, aluop);
-         assign signalextended = (instruction[15]) ? {16'hFFFF,instruction[15:0]}:{16'd0,instruction[15:0]} ;
-	 assign muxRegDst = (regdst)?  instruction[15:11]:instruction[20:16]; 
-	 Register_Bank register_bank( clk,instruction[25:21],instruction[20:16], muxRegDst, writedata, regwrite,  data1, data2);							
-	 AluControl alucontrol(aluop, instruction[5:0],aluctrl); //controle da ALU
+         assign muxRegDst = (regdst)?  instruction[15:11]:instruction[20:16]; 
+	 Register_Bank register_bank( clk,instruction[25:21],instruction[20:16], muxRegDst, writedata, regwrite,  data1, data2);
 	 assign alu_B = (alusrc) ? signalextended:data2 ;
+	 AluControl alucontrol(aluop, instruction[5:0],aluctrl); //controle da ALU
 	 Alu alu(aluctrl, data1, alu_B, aluout, zero); //Unidade Lógico Aritimética
-			
 	 DataMem datamem(clk,memread,memwrite,data2, aluout>>2, readData); //Memória de dados
 	 assign writedata = (memtoreg) ? readData:aluout ;
 endmodule 
