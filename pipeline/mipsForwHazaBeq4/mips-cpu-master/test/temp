@@ -1,0 +1,198 @@
+t0001-final_value.fv.asm
+----------------- FILE CONTENTS ---------------------
+addi $v0, $zero, 0
+addi $v1, $zero, 1
+addi $t0, $zero, 2
+addi $t1, $zero, 3
+addi $t2, $zero, 4
+addi $t3, $zero, 5
+addi $t4, $zero, 6
+addi $t5, $zero, 7
+addi $t6, $zero, 8
+addi $t7, $zero, 9
+t0005-branch.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# t0005-branch.asm
+#
+# Perform branches (beq, bne) which would create hazards
+# and see if they are handled correctly.
+#
+
+# initial values
+addi $t0, $zero, 1
+addi $t1, $zero, 2
+
+# increment $t0 so it equals $t1
+addi $t0, $t0, 1
+
+beq $t0, $t1, skip1
+
+# these shouldn't get added
+#  If they do, the third hex digit will be 1
+addi $t0, $t0, 256
+addi $t1, $t1, 256
+
+skip1:
+
+add $t0, $t0, $t1  # 2 + 2 = 4
+add $t1, $t0, $t1  # 4 + 2 = 6
+
+bne $t0, $t1, skip2
+
+# these shouldn't get added
+#  If they do, the fourth hex digit will be 1
+addi $t0, $t0, 4096
+addi $t1, $t1, 4096
+
+skip2:
+
+# $t0 = 4, $t1 = 6
+
+# so the values show up in the dump
+add $t0, $zero, $t0
+add $t1, $zero, $t1
+t0005-branch.fv.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# t0005-branch.fv.asm
+#
+# Perform branches (beq, bne) which would create hazards
+# and see if they are handled correctly.
+#
+
+# initial values
+addi $t0, $zero, 1
+addi $t1, $zero, 2
+
+# increment $t0 so it equals $t1
+addi $t0, $t0, 1
+
+beq $t0, $t1, skip1
+
+# these shouldn't get added
+#  If they do, the third hex digit will be 1
+addi $t0, $t0, 256
+addi $t1, $t1, 256
+
+skip1:
+
+add $t0, $t0, $t1  # 2 + 2 = 4
+add $t1, $t0, $t1  # 4 + 2 = 6
+
+bne $t0, $t1, skip2
+
+# these shouldn't get added
+#  If they do, the fourth hex digit will be 1
+addi $t0, $t0, 4096
+addi $t1, $t1, 4096
+
+skip2:
+
+# $t0 = 4, $t1 = 6
+t0006-jump.fv.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# Test the jump operation.
+#
+
+# start: $t0 = 1
+addi $t0, $zero, 1
+
+# should skip adding 256 to $t0
+j skip1
+addi $t0, $t0, 256
+skip1:
+
+# $t0 = 2
+addi $t0, $t0, 1
+
+# should skip adding 512 to $t0
+j skip2
+addi $t0, $t0, 512
+skip2:
+
+# $t0 = 3
+addi $t0, $t0, 1
+t0011-operators.fv.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# Test some binary operators.
+#
+
+# initial values
+addi $t0, $zero, 6  # (0110)
+addi $t1, $zero, 11 # (1011)
+
+# do some operations
+xor $t2, $t0, $t1	#   0110 ^ 1011  = 1101
+and $t3, $t0, $t1	#   0110 & 1011  = 0010
+or  $t4, $t0, $t1	#   0110 | 1011  = 1111
+nor $t5, $t0, $t1	# ~(0110 | 1011) = 0000
+
+# $t0 = 6, $t1 = 11 (0xb), $t2 = 13 (0xd), $t3 = 2, $t4 = 15 (0xf), $t5 = 0
+t0020-stall.fv.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# Test whether operations which require a stall and
+# forward work correctly.
+#
+
+# initial values
+addi $t0, $zero, 5
+addi $t1, $zero, 7
+addi $t2, $zero, 9
+
+# store words in memory
+sw $t0, 0($zero)  # 5
+sw $t1, 4($zero)  # 7
+
+# read the memory and perform an operation
+#   *** stall and forward required ***
+lw $t2, 4($zero)	# 7
+add $t3, $t0, $t2   # 5 + 7 = 12
+
+# $t0 = 5, $t1 = 7, $t2 = 7, $t3 = 12 (0x0c)
+t0021-stall.fv.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# Operations which are dependent on the results of previous operations
+# will require a stall or some other action to avoid a mis-calculation.
+# 
+# Perform these dependent operations and see if they work.
+#
+
+# initial values
+addi $t0, $zero, 1
+addi $t1, $zero, 5
+addi $t2, $zero, 7
+
+add $t0, $t0, $t1  # $t0 = 1 + 5 = 6
+add $t1, $t0, $t1  # $t1 = 6 + 5 = 11
+add $t2, $t1, $t0  # $t2 = 11 + 6 = 17
+add $t0, $t2, $t1  # $t0 = 17 + 11 = 28
+
+# $t0 = 28 (0x1c), $t1 = 11 (0x0b), $t2 = 17 (0x11)
+t0030-lw_sw.fv.asm
+----------------- FILE CONTENTS ---------------------
+
+#
+# Test the lw, and sw opertions.
+#
+
+addi $t0, $zero, 5
+addi $t1, $zero, 9
+
+sw $t0, 0($zero)	# 5
+sw $t1, 4($zero)	# 9
+
+lw $t0, 4($zero)	# 9
+add $t0, $t0, $t1	# 9 + 9 = 18
+
+# $t0 = 18 (0x12), $t1 = 9

@@ -1,0 +1,10 @@
+*.out
+*.vcd
+t*-*
+!t*-*.check
+!t*-*.asm
+!t*-*.c
+*.text
+*.elf
+bin2hex
+cla_adder_4bit_tb
