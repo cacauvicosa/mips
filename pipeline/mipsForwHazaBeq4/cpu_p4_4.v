@@ -27,6 +27,7 @@
 `define DEBUG_CPU_STAGES 1
 `endif
 
+
 module cpu(
 		input wire clk);
 
@@ -235,7 +236,9 @@ module cpu(
         assign mxoutB = (forward_branch_b)?alurslt_s4:data2;
  // P4 comparator
 	wire comp;
-	assign pcsrc = ( (mxoutA == mxoutB) & (branch_eq_s2 | branch_ne_s2) & ~beq_hazard & ~stall_s1_s2);
+	assign pcsrc = ( ((mxoutA == mxoutB) & branch_eq_s2)
+                       | (~(mxoutA == mxoutB)& branch_ne_s2 ))  
+		       & ~beq_hazard & ~stall_s1_s2;
 	
 	
 	// shift left, seimm
