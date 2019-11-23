@@ -38,7 +38,7 @@ module im(
 	end
 
 	assign data = mem[addr[8:2]][31:0];
-	assign data = mem[addr[8:2]+1][31:0];
+	assign data1 = mem[addr[8:2]+1][31:0];
 
 endmodule
 

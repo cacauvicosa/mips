@@ -42,10 +42,11 @@ module cpu(
 	initial begin
 		if (`DEBUG_CPU_STAGES) begin
 			$display("if_pc,    if_instr, id_regrs, id_regrt, ex_alua,  ex_alub,  ex_aluctl, mem_memdata, mem_memread, mem_memwrite, wb_regdata, wb_regwrite");
-			$monitor("PC=%x %x||rs=%d rt=%d rd=%d||A=%x B=%x||w=%x Ram%x R%xW%x||D=%x \nb=%x j%x||Opcode=%x Func=%x||I=%x R=%x||D=%d alu=%x branch%x j%x||R=%x C=%d \n-------------------------------------------------------------------------------------------------------",
+			$monitor("PC=%x i=%x||rs=%d rt=%d ||A=%x B=%x||w=%x Ram%x R%xW%x||D=%x \nb=%x j%x||Opcode=%x Func=%x||I=%x R=%x||D=%d alu=%x branch%x j%x||R=%x C=%d  \nBA=%x i1=%x|| rs1=%d rt1=%d ||
+\n-------------------------------------------------------------------------------------------------------",
 					pc,				/* if_pc */
 					inst,			/* if_instr */
-					rs,rt,rd,	
+					rs,rt,	
 					fw_data1_s3,		/* A */
 					alusrc_data2,	/* B */
 					data2_s4,		/* mem_memdata */
@@ -60,7 +61,9 @@ memread_s4,		/* mem_memread */
 					pcsrc,jump_s4,		
 
 					wrreg_s5,		/* wb_regdata */
-					clock_counter
+					clock_counter,
+					baddr_s2,inst1,
+					rs1,rt1
 				);
 		end
 	end 
@@ -105,11 +108,10 @@ memread_s4,		/* mem_memread */
 			pc <= pc8;
 	end
 
-	// pass PC + 4 to stage 2
-	wire [31:0] pc4_s2;
-	regr #(.N(32)) regr_pc4_s2(.clk(clk),
-						.hold(stall_s1_s2), .clear(flush_s1),
-						.in(pc4), .out(pc4_s2));
+	// pass PC + 8 to stage 2
+	wire [31:0] pc8_s2;
+	regr #(.N(32)) regr_pc8_s2(.clk(clk), .clear(flush_s1),
+						.in(pc8), .out(pc8_s2));
 
 	// instruction memory
 	wire [31:0] inst, inst1; // inst ALU/ADDI/BEQ
@@ -129,18 +131,18 @@ memread_s4,		/* mem_memread */
 	// {{{ stage 2, ID (decode)
 
 	// decode instruction
-	wire [5:0]  opcode;
-	wire [4:0]  rs;
-	wire [4:0]  rt;
+	wire [5:0]  opcode,opcode1;
+	wire [4:0]  rs,rs1;
+	wire [4:0]  rt,rt1;
 	wire [4:0]  rd;
 	wire [15:0] imm;
 	wire [4:0]  shamt;
 	wire [31:0] jaddr_s2;
 	wire [31:0] seimm;  // sign extended immediate
 	//
-	assign opcode   = inst_s2[31:26];
-	assign rs       = inst_s2[25:21];
-	assign rt       = inst_s2[20:16];
+	assign opcode   = inst_s2[31:26]; assign opcode1   = inst1_s2[31:26];
+	assign rs       = inst_s2[25:21]; assign rs1       = inst1_s2[25:21];
+	assign rt       = inst_s2[20:16]; assign rt1       = inst_s2[20:16];
 	assign rd       = inst_s2[15:11];
 	assign imm      = inst_s2[15:0];
 	assign shamt    = inst_s2[10:6];
