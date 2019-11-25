@@ -1,0 +1,30 @@
+beq 4 estagio, forw, hazard load
+0: Lw r1, 200(r0)       1,2,3,4,5
+4: addi r3, r0, 4       2,3,4,5,6
+8: Lw r2,100(r0)        3,4,5,6,7
+12:LOOP Beq r2,r0, FIM  4,16   ,5-6  17-18 ,7,8
+16:Lw r4,200(r3)        5-6 17-18 ,7,8
+20:Addi r3,r3,4 i++     7  19 ,8,9,10,11
+24:addi r2,r2,-1        8,9,10,11,12
+28:Slt r5,r1,r4         9,10,11,12,13 
+32:Bne r5,r0, Cont      10,11,12,13    - BNE nao desvia 
+36:Addi r1,r4,0         11,12,13,14
+40: cont: jump Loop     12,13,14,15
+44: Fim: xor r5,r5,r5   13,14,15 
+48: and r6,t6,r7        14,15
+
+
+beq 4 estagio, forw, hazard load
+0: Lw r1, 200(r0)       1,2,3,4,5
+4: addi r3, r0, 4       2,3,4,5,6
+8: Lw r2,100(r0)        3,4,5,6,7
+12:LOOP Beq r2,r0, FIM  4 18  ,5-6 ,7,8
+16:Lw r4,200(r3)        5-6  ,7,8
+20:Addi r3,r3,4 i++     7 ,8,9,10,11
+24:addi r2,r2,-1        8,9,10,11,12
+28:Slt r5,r1,r4         9,10,11,12,13 
+32:Bne r5,r0, Cont      10,11,12,13    - BNE desvia 
+36:Addi r1,r4,0         11,12,13,
+40: cont: jump Loop     12  14 , 13  15, - 16, - 17
+44: Fim: xor r5,r5,r5   13, 
+48: and r6,t6,r7        
