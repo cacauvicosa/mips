@@ -11,6 +11,8 @@ ou localmente com Inkscape ou outro software de edição vetorial SVG.
 
 Explicacao detalhada do <a href="https://docs.google.com/presentation/d/e/2PACX-1vTl4fxlJFZXNVaToEmzhHt1Svg1sREU4JHDny7Wepr2bVTlaYBXCy-6LSoPnJ9XyDiuTcDxk25-rXFO/pub?start=false&loop=false&delayms=3000&slide=id.p">codigo MIPS pipeline com Unidades de Forwarding, Hazard de Load e BEQ 4 Estagio</a>
 
+<a href="https://github.com/cacauvicosa/mips/tree/master/pipeline/mipsForwHazaBeq4">O fonte do codigo está nesta pasta do github para ser adaptado
+</a> 
 
 Para converter <a href="http://www.kurtm.net/mipsasm/index.cgi">MIPS em hexadecimal Online</a> 
 
