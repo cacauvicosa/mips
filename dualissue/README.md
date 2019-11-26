@@ -13,5 +13,7 @@ Explicacao detalhada do <a href="https://docs.google.com/presentation/d/e/2PACX-
 
 
 Para converter <a href="http://www.kurtm.net/mipsasm/index.cgi">MIPS em hexadecimal Online</a> 
+
 <a href="http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html">Explicação de cada Instrução Mips Online </a>
+
 <a href="http://www.cs.uwm.edu/classes/cs315/Bacon/Lecture/HTML/ch05s03.html">Mapeamento do Banco de Registradores MIPS</a> 
