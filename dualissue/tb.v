@@ -37,7 +37,7 @@ cpu CPU(clk);
 initial begin
     $dumpfile("test.vcd");
     $dumpvars(0,top);
-    #6
+    #16
     $finish;
     end
 

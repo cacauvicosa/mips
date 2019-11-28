@@ -31,7 +31,7 @@ module cpu(
 		input wire clk);
 
 	parameter NMEM = 20;  // number in instruction memory
-	parameter IM_DATA = "im_data1.txt";
+	parameter IM_DATA = "im_data2.txt";
 
 	wire regwrite_s5,regwrite1_s5;
 	wire [4:0] wrreg_s5,wrreg1_s5;
@@ -43,31 +43,15 @@ module cpu(
 		if (`DEBUG_CPU_STAGES) begin
 			$display("if_pc,    if_instr, id_regrs, id_regrt, ex_alua,  ex_alub,  ex_aluctl, mem_memdata, mem_memread, mem_memwrite, wb_regdata, wb_regwrite");
 
-$monitor("PC=%x i =%x||rs=%d rt=%d      ||A=%x B=%x||w=%x Ram%x R%xW%x||D=%x R=%d\nBA=%x i1=%x||Opcode=%x Func=%x||I=%x R=%x||D=%d alu=%x          ||R=%x C=%d  \npcsrc=%x               ||rs1=%d rt1=%d     ||Addr=%x              ||                        ||\n                       ||Opcode1=%x ||Wrg=%d   Wrg1%d      ||                   ||\n-------------------------------------------------------------------------------------------------------",
-					pc,				/* if_pc */
-					inst,			/* if_instr */
-					rs,rt,	
-					data1_s3,		/* A */
-					alusrc_data2,	/* B */
-					data12_s4,		/* mem_memdata */
-					mem_address_s4,
-					memread_s4,		/* mem_memread */
-					memwrite_s4,	
-					wrdata_s5,wrreg_s5,		/* wb_wrreg */
-
-
-					baddr_s2,inst1,
-			                opcode, inst_s2[5:0],
-					seimm_s3,alurslt,
-					 wrreg_s4,alurslt_s4,	/* mem_memwrite */
-					,wrdata_s5,		
-
-							/* wb_regdata */
-					clock_counter,
-					pcsrc,
-					rs1,rt1, mem_address, opcode1, wrreg, wrreg1 );
+$monitor("PC=%x|| rs=%d op =%d ||d1=%x d2=%x ||alu4=%x W%x R%x|| wr=%d\n i=%x|| rt=%d pscr=%x ||ALU=%x            || addr=%d          ||wr1=%d\nBA=%x|| rs1=%d op1=%d||rs1=%x im=%x||RD=%x        || clk=%d\ni1=%x|| rt1=%d       ||addr=%x           ||WD=%x\n -----------------------------------------------",
+	pc, rs,	opcode,	data1_s3,alusrc_data2,alurslt_s4,memwrite_s4,memread_s4, wrreg_s5,
+	inst,rt, pcsrc,	alurslt,mem_address_s4[8:2],wrreg1_s5,		/* if_instr */
+	baddr_s2, rs1, opcode1,data11_s3,seimm1_s3,rdata, clock_counter,
+	inst1, rt1, mem_address,data12_s4);
 		end
 	end 
+
+
 	// }}}
 
 	// {{{ flush control
@@ -112,11 +96,14 @@ $monitor("PC=%x i =%x||rs=%d rt=%d      ||A=%x B=%x||w=%x Ram%x R%xW%x||D=%x R=%
 	// instruction memory
 	wire [31:0] inst, inst1; // inst ALU/ADDI/BEQ
 				 // inst1  LW or SW
-	wire [31:0] inst_s2,inst1_s2;
+	wire [31:0] inst_s2;
+	wire [31:0]  inst1_s2;
 	im #(.NMEM(NMEM),.IM_DATA(IM_DATA))
 	im1(.addr(pc), .data(inst),.data1(inst1));
-	regr #(.N(64)) regr_im_s2(.clk(clk),.clear(flush_s1),
-		.in({inst,inst1}), .out({inst_s2,inst1_s2}));
+	regr #(.N(32)) regr_im_s2(.clk(clk),.clear(1'b0),
+		.in({inst}), .out({inst_s2}));
+	regr #(.N(32)) regr_im1_s2(.clk(clk),.clear(1'b0),
+		.in({inst1}), .out({inst1_s2}));
 
 	// }}}
 
@@ -140,7 +127,7 @@ assign rs       = inst_s2[25:21];
 assign rs1       = inst1_s2[25:21];
 
 assign rt       = inst_s2[20:16]; 
-assign rt1       = inst_s2[20:16];
+assign rt1       = inst1_s2[20:16];
 
 assign rd       = inst_s2[15:11];
 
@@ -202,7 +189,6 @@ regr #(.N(64)) reg_s2_seimm(.clk(clk), .clear(flush_s2),
 	wire [1:0]	aluop;
 	wire		regwrite,regwrite1;
 	wire		alusrc;
-	//
 	control ctl1(.opcode(opcode),
 			.opcode1(opcode1), .regdst(regdst),
 				.branch_eq(branch_eq_s2), 
