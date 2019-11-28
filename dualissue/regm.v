@@ -26,13 +26,13 @@
 
 module regm(
 		input wire			clk,
-		input wire  [4:0]	readA1, readA2,
-		input wire  [4:0]	readB1, reaBA2,
-		output wire [31:0]	dataA1, dataA2,
-		output wire [31:0]	dataB1, dataB2,
-		input wire			regwrite,
-		input wire	[4:0]	wrregA,wrregB,
-		input wire	[31:0]	wrdataA,wrdataB);
+		input wire  [4:0]	read1, read2,
+		input wire  [4:0]	read11, reaB12,
+		output wire [31:0]	data1, data2,
+		output wire [31:0]	data11, data12,
+		input wire		regwrite,regwrite1,
+		input wire	[4:0]	wrreg,wrreg1,
+		input wire	[31:0]	wrdata,wrdata1);
 
 	parameter NMEM = 20;   // Number of memory entries,
 							// not the same as the memory size
@@ -46,6 +46,7 @@ module regm(
 
 
 	reg [31:0] _data1, _data2;
+	reg [31:0] _data11, _data12;
 
 	initial begin
 		if (`DEBUG_CPU_REG) begin
@@ -67,11 +68,11 @@ module regm(
 
 	always @(*) begin
 		if (read1 == 5'd0)
-			_dataA1 = 32'd0;
-		else if ((readA1 == wrregA) && regwrite)
-			_dataA1 = wrdata;
+			_data1 = 32'd0;
+		else if ((read1 == wrreg) && regwrite)
+			_data1 = wrdata;
 		else
-			_dataA1 = mem[readA1][31:0];
+			_data1 = mem[read1][31:0];
 	end
 
 	always @(*) begin
@@ -86,12 +87,44 @@ module regm(
 	assign data1 = _data1;
 	assign data2 = _data2;
 
+	always @(*) begin
+		if (read11 == 5'd0)
+			_data11 = 32'd0;
+		else if ((read11 == wrreg1) && regwrite1)
+			_data11 = wrdata1;
+		else
+			_data11 = mem[read11][31:0];
+	end
+
+	always @(*) begin
+		if (read12 == 5'd0)
+			_data12 = 32'd0;
+		else if ((read12 == wrreg1) && regwrite1)
+			_data12 = wrdata1;
+		else
+			_data12 = mem[read12][31:0];
+	end
+
+	assign data11 = _data11;
+	assign data12 = _data12;
+
+
+
 	always @(posedge clk) begin
 		if (regwrite && wrreg != 5'd0) begin
 			// write a non $zero register
 			mem[wrreg] <= wrdata;
 		end
 	end
+
+	always @(posedge clk) begin
+		if (regwrite1 && wrreg1 != 5'd0) begin
+			// write a non $zero register
+			mem[wrreg1] <= wrdata1;
+		end
+	end
+
+
 endmodule
 
 `endif

@@ -13,6 +13,7 @@ module alu_control(
 			4'd0:  _funct = 4'd2;	/* add */
 			4'd2:  _funct = 4'd6;	/* sub */
 			4'd5:  _funct = 4'd1;	/* or */
+			4'd4:  _funct = 4'd0;   /* and */
 			4'd6:  _funct = 4'd13;	/* xor */
 			4'd7:  _funct = 4'd12;	/* nor */
 			4'd10: _funct = 4'd7;	/* slt */

@@ -118,68 +118,82 @@ memread_s4,		/* mem_memread */
 				 // inst1  LW or SW
 	wire [31:0] inst_s2,inst1_s2;
 	im #(.NMEM(NMEM),.IM_DATA(IM_DATA))
-	im1(.clk(clk), .addr(pc), .data(inst),.data1(inst1));
-	regr #(.N(32)) regr_im_s2(.clk(clk),
-						.hold(stall_s1_s2), .clear(flush_s1),
-						.in(inst), .out(inst_s2));
-
-
-
+	im1(.addr(pc), .data(inst),.data1(inst1));
+	regr #(.N(64)) regr_im_s2(.clk(clk),.clear(flush_s1),
+		.in({inst,inst1}), .out({inst_s2,inst1_s2});
 
 	// }}}
 
 	// {{{ stage 2, ID (decode)
-
+// inst: ALU, ADDI or BEQ/BNE, Inst1: Lw or Sw
 	// decode instruction
 	wire [5:0]  opcode,opcode1;
 	wire [4:0]  rs,rs1;
 	wire [4:0]  rt,rt1;
 	wire [4:0]  rd;
-	wire [15:0] imm;
-	wire [4:0]  shamt;
-	wire [31:0] jaddr_s2;
-	wire [31:0] seimm;  // sign extended immediate
+	wire [15:0] imm,imm1;
+	wire [31:0] seimm,seimm1;  // sign extended immediate
 	//
-	assign opcode   = inst_s2[31:26]; assign opcode1   = inst1_s2[31:26];
-	assign rs       = inst_s2[25:21]; assign rs1       = inst1_s2[25:21];
-	assign rt       = inst_s2[20:16]; assign rt1       = inst_s2[20:16];
-	assign rd       = inst_s2[15:11];
-	assign imm      = inst_s2[15:0];
-	assign shamt    = inst_s2[10:6];
-	assign jaddr_s2 = {pc[31:28], inst_s2[25:0], {2{1'b0}}};
-	assign seimm 	= {{16{inst_s2[15]}}, inst_s2[15:0]};
+assign seimm 	= {{16{inst_s2[15]}}, inst_s2[15:0]};
+assign seimm1 	= {{16{inst1_s2[15]}}, inst1_s2[15:0]};
 
-	// register memory
+assign opcode   = inst_s2[31:26];
+assign opcode1   = inst1_s2[31:26];
+	
+assign rs       = inst_s2[25:21]; 
+assign rs1       = inst1_s2[25:21];
+
+assign rt       = inst_s2[20:16]; 
+assign rt1       = inst_s2[20:16];
+
+assign rd       = inst_s2[15:11];
+
+assign imm      = inst_s2[15:0];
+assign imm1      = inst1_s2[15:0];
+
+
+// register memory
 	wire [31:0] data1, data2;
 	regm regm1(.clk(clk), .read1(rs), .read2(rt),
 			.data1(data1), .data2(data2),
 			.regwrite(regwrite_s5), .wrreg(wrreg_s5),
-			.wrdata(wrdata_s5));
-
-	// pass rs to stage 3 (for forwarding)
-	wire [4:0] rs_s3;
-	regr #(.N(5)) regr_s2_rs(.clk(clk), .clear(1'b0), .hold(stall_s1_s2),
-				.in(rs), .out(rs_s3));
+			.wrdata(wrdata_s5),
+			.read11(rs1), .read12(rt1),
+			.data11(data11), .data12(data12),
+			.regwrite1(regwrite1_s5), .wrreg1(wrreg1_s5),
+			.wrdata1(wrdata1_s5));
 
 	// transfer register data to stage 3
 	wire [31:0]	data1_s3, data2_s3;
-	regr #(.N(64)) reg_s2_mem(.clk(clk), .clear(flush_s2), .hold(stall_s1_s2),
+	regr #(.N(64)) reg_s2_mem(.clk(clk), .clear(flush_s2), 
 				.in({data1, data2}),
 				.out({data1_s3, data2_s3}));
 
-	// transfer seimm, rt, and rd to stage 3
-	wire [31:0] seimm_s3;
-	wire [4:0] 	rt_s3;
-	wire [4:0] 	rd_s3;
-	regr #(.N(32)) reg_s2_seimm(.clk(clk), .clear(flush_s2), .hold(stall_s1_s2),
-						.in(seimm), .out(seimm_s3));
-	regr #(.N(10)) reg_s2_rt_rd(.clk(clk), .clear(flush_s2), .hold(stall_s1_s2),
-						.in({rt, rd}), .out({rt_s3, rd_s3}));
+	// transfer register data to stage 3
+	wire [31:0]	data11_s3, data12_s3;
+	regr #(.N(64)) reg1_s2_mem(.clk(clk), .clear(flush_s2), 
+				.in({data11, data12}),
+				.out({data11_s3, data12_s3}));
 
-	// transfer PC + 4 to stage 3
-	wire [31:0] pc4_s3;
-	regr #(.N(32)) reg_pc4_s2(.clk(clk), .clear(1'b0), .hold(stall_s1_s2),
-						.in(pc4_s2), .out(pc4_s3));
+
+
+
+	// transfer seimm, rt, and rd to stage 3
+	wire [31:0] seimm_s3,seimm1_s3;
+regr #(.N(64)) reg_s2_seimm(.clk(clk), .clear(flush_s2), 
+		.in({seimm,seimm1}), .out({seimm_s3,seimm1_s3}));
+
+	wire [4:0] 	rt_s3,rt1_s3;
+	wire [4:0] 	rd_s3;
+	regr #(.N(15)) reg_s2_rt_rd(.clk(clk), .clear(flush_s2), 
+	.in({rt, rd, rt1}), .out({rt_s3, rd_s3, rt1_s3}));
+
+
+
+	 // add baddr_s2 = pc8_s2 + 4*im
+	// branch address
+	wire [31:0] baddr_s2;
+	assign baddr_s2 = pc8_s2 + 4*seimm;
 
 	// control (opcode -> ...)
 	wire		regdst;
@@ -187,83 +201,68 @@ memread_s4,		/* mem_memread */
 	wire		branch_ne_s2;
 	wire		memread;
 	wire		memwrite;
-	wire		memtoreg;
 	wire [1:0]	aluop;
-	wire		regwrite;
+	wire		regwrite,regwrite1;
 	wire		alusrc;
-	wire		jump_s2;
 	//
-	control ctl1(.opcode(opcode), .regdst(regdst),
-				.branch_eq(branch_eq_s2), .branch_ne(branch_ne_s2),
+	control ctl1(.opcode(opcode),
+			.opcode1(opcode1), .regdst(regdst),
+				.branch_eq(branch_eq_s2), 
+				.branch_ne(branch_ne_s2),
 				.memread(memread),
-				.memtoreg(memtoreg), .aluop(aluop),
-				.memwrite(memwrite), .alusrc(alusrc),
-				.regwrite(regwrite), .jump(jump_s2));
+				.aluop(aluop),
+				.memwrite(memwrite), 
+				.alusrc(alusrc),
+				.regwrite(regwrite),
+				.regwrite1(regwrite1) );
 
-	// shift left, seimm
-	wire [31:0] seimm_sl2;
-	assign seimm_sl2 = {seimm[29:0], 2'b0};  // shift left 2 bits
-	// branch address
-	wire [31:0] baddr_s2;
-	assign baddr_s2 = pc4_s2 + seimm_sl2;
+	
+// pcscr
+       wire pcsrc;
+       assign pcsrc = branch_eq_s2 & (data1==data2) |
+			branch_ne_s2 & ~(data1==data2);
 
 	// transfer the control signals to stage 3
 	wire		regdst_s3;
 	wire		memread_s3;
 	wire		memwrite_s3;
-	wire		memtoreg_s3;
 	wire [1:0]	aluop_s3;
-	wire		regwrite_s3;
+	wire		regwrite_s3,regwrite1_s3;
 	wire		alusrc_s3;
-	// A bubble is inserted by setting all the control signals
-	// to zero (stall_s1_s2).
 	regr #(.N(8)) reg_s2_control(.clk(clk), .clear(stall_s1_s2), .hold(1'b0),
 			.in({regdst, memread, memwrite,
-					memtoreg, aluop, regwrite, alusrc}),
-			.out({regdst_s3, memread_s3, memwrite_s3,
-					memtoreg_s3, aluop_s3, regwrite_s3, alusrc_s3}));
+			      aluop, regwrite,
+			      regwrite1,alusrc}),
+			.out({regdst_s3, memread_s3, 
+				memwrite_s3,aluop_s3,
+		regwrite_s3, regwrite1_s3,alusrc_s3}));
 
-	wire branch_eq_s3, branch_ne_s3;
-	regr #(.N(2)) branch_s2_s3(.clk(clk), .clear(flush_s2), .hold(1'b0),
-				.in({branch_eq_s2, branch_ne_s2}),
-				.out({branch_eq_s3, branch_ne_s3}));
-
-	wire [31:0] baddr_s3;
-	regr #(.N(32)) baddr_s2_s3(.clk(clk), .clear(flush_s2), .hold(1'b0),
-				.in(baddr_s2), .out(baddr_s3));
-
-	wire jump_s3;
-	regr #(.N(1)) reg_jump_s3(.clk(clk), .clear(flush_s2), .hold(1'b0),
-				.in(jump_s2),
-				.out(jump_s3));
-
-	wire [31:0] jaddr_s3;
-	regr #(.N(32)) reg_jaddr_s3(.clk(clk), .clear(flush_s2), .hold(1'b0),
-				.in(jaddr_s2), .out(jaddr_s3));
 	// }}}
 
 	// {{{ stage 3, EX (execute)
 
 	// pass through some control signals to stage 4
-	wire regwrite_s4;
-	wire memtoreg_s4;
+	wire regwrite_s4;wire regwrite1_s4;
 	wire memread_s4;
 	wire memwrite_s4;
-	regr #(.N(4)) reg_s3(.clk(clk), .clear(flush_s2), .hold(1'b0),
-				.in({regwrite_s3, memtoreg_s3, memread_s3,
+	regr #(.N(4)) reg_s3(.clk(clk), .clear(flush_s2),
+				.in({regwrite_s3,regwrite1_s3 , memread_s3,
 						memwrite_s3}),
-				.out({regwrite_s4, memtoreg_s4, memread_s4,
+				.out({regwrite_s4, regwrite1_s4, memread_s4,
 						memwrite_s4}));
 
 	// ALU
 	// second ALU input can come from an immediate value or data
 	wire [31:0] alusrc_data2;
-	assign alusrc_data2 = (alusrc_s3) ? seimm_s3 : fw_data2_s3;
+	assign alusrc_data2 = (alusrc_s3) ? seimm_s3 : data2_s3;
+
 	// ALU control
 	wire [3:0] aluctl;
 	wire [5:0] funct;
 	assign funct = seimm_s3[5:0];
 	alu_control alu_ctl1(.funct(funct), .aluop(aluop_s3), .aluctl(aluctl));
+
+
 	// ALU
 	wire [31:0]	alurslt;
 	reg [31:0] fw_data1_s3;
@@ -354,15 +353,6 @@ memread_s4,		/* mem_memread */
 				.in(wrreg_s4),
 				.out(wrreg_s5));
 
-	// branch
-	reg pcsrc;
-	always @(*) begin
-		case (1'b1)
-			branch_eq_s4: pcsrc <= zero_s4;
-			branch_ne_s4: pcsrc <= ~(zero_s4);
-			default: pcsrc <= 1'b0;
-		endcase
-	end
 	// }}}
 			
 	// {{{ stage 5, WB (write back)

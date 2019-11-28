@@ -22,7 +22,6 @@
 `define _im
 
 module im(
-		input wire			clk,
 		input wire 	[31:0] 	addr,
 		output wire [31:0] 	data,
 		output wire [31:0] 	data1);
