@@ -27,7 +27,7 @@
 module regm(
 		input wire			clk,
 		input wire  [4:0]	read1, read2,
-		input wire  [4:0]	read11, reaB12,
+		input wire  [4:0]	read11, read12,
 		output wire [31:0]	data1, data2,
 		output wire [31:0]	data11, data12,
 		input wire		regwrite,regwrite1,

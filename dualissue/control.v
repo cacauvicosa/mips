@@ -2,7 +2,7 @@
 `define _control
 
 module control(
-		input  wire	[5:0]	opcode,opcode1
+		input  wire	[5:0]	opcode,opcode1,
 		output reg			branch_eq, branch_ne,
 		output reg [1:0]	aluop,
 		output reg			memread, memwrite,
