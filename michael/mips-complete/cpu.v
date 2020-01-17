@@ -15,17 +15,279 @@
  * established.
  */
 
-`include "regr.v"
-`include "im.v"
-`include "regm.v"
-`include "control.v"
-`include "alu.v"
-`include "alu_control.v"
-`include "dm.v"
-
 `ifndef DEBUG_CPU_STAGES
 `define DEBUG_CPU_STAGES 1
 `endif
+
+module regr (
+	input clk,
+	input clear,
+	input hold,
+	input wire [N-1:0] in,
+	output reg [N-1:0] out);
+
+	parameter N = 1;
+
+	always @(posedge clk) begin
+		if (clear)
+			out <= {N{1'b0}};
+		else if (hold)
+			out <= out;
+		else
+			out <= in;
+	end
+endmodule
+
+module im(
+		input wire			clk,
+		input wire 	[31:0] 	addr,
+		output wire [31:0] 	data);
+
+	parameter NMEM = 128;   // Number of memory entries,
+							// not the same as the memory size
+	parameter IM_DATA = "im_data.txt";  // file to read data from
+
+	reg [31:0] mem [0:127];  // 32-bit memory with 128 entries
+
+	initial begin
+		$readmemh(IM_DATA, mem, 0, NMEM-1);
+	end
+
+	assign data = mem[addr[8:2]][31:0];
+endmodule
+
+module regm(
+		input wire			clk,
+		input wire  [4:0]	read1, read2,
+		output wire [31:0]	data1, data2,
+		input wire			regwrite,
+		input wire	[4:0]	wrreg,
+		input wire	[31:0]	wrdata);
+
+	parameter NMEM = 20;   // Number of memory entries,
+							// not the same as the memory size
+	parameter RM_DATA = "rm_data.txt";  // file to read data from
+
+	reg [31:0] mem [0:31];  // 32-bit memory with 32 entries
+
+	initial begin
+		$readmemh(RM_DATA, mem, 0, NMEM-1);
+	end
+
+
+	reg [31:0] _data1, _data2;
+
+	/*
+	initial begin
+		if (`DEBUG_CPU_REG) begin
+			$display("     $v0,      $v1,      $t0,      $t1,      $t2,      $t3,      $t4,      $t5,      $t6,      $t7");
+			$monitor("%x, %x, %x, %x, %x, %x, %x, %x, %x, %x",
+					mem[2][31:0],	// $v0 
+					mem[3][31:0],	// $v1 
+					mem[8][31:0],	// $t0 
+					mem[9][31:0],	// $t1 
+					mem[10][31:0],	// $t2 
+					mem[11][31:0],	// $t3 
+					mem[12][31:0],	// $t4 
+					mem[13][31:0],	// $t5 
+					mem[14][31:0],	// $t6 
+					mem[15][31:0],	// $t7 
+				);
+		end
+	end
+	*/
+	always @(*) begin
+		if (read1 == 5'd0)
+			_data1 = 32'd0;
+		else if ((read1 == wrreg) && regwrite)
+			_data1 = wrdata;
+		else
+			_data1 = mem[read1][31:0];
+	end
+
+	always @(*) begin
+		if (read2 == 5'd0)
+			_data2 = 32'd0;
+		else if ((read2 == wrreg) && regwrite)
+			_data2 = wrdata;
+		else
+			_data2 = mem[read2][31:0];
+	end
+
+	assign data1 = _data1;
+	assign data2 = _data2;
+
+	always @(posedge clk) begin
+		if (regwrite && wrreg != 5'd0) begin
+			// write a non $zero register
+			mem[wrreg] <= wrdata;
+		end
+	end
+endmodule
+
+module control(
+		input  wire	[5:0]	opcode,
+		output reg			branch_eq, branch_ne,
+		output reg [1:0]	aluop,
+		output reg			memread, memwrite, memtoreg,
+		output reg			regdst, regwrite, alusrc,
+		output reg			jump);
+
+	always @(*) begin
+		/* defaults */
+		aluop[1:0]	<= 2'b10;
+		alusrc		<= 1'b0;
+		branch_eq	<= 1'b0;
+		branch_ne	<= 1'b0;
+		memread		<= 1'b0;
+		memtoreg	<= 1'b0;
+		memwrite	<= 1'b0;
+		regdst		<= 1'b1;
+		regwrite	<= 1'b1;
+		jump		<= 1'b0;
+
+		case (opcode)
+			6'b100011: begin	/* lw */
+				memread  <= 1'b1;
+				regdst   <= 1'b0;
+				memtoreg <= 1'b1;
+				aluop[1] <= 1'b0;
+				alusrc   <= 1'b1;
+			end
+			6'b001000: begin	/* addi */
+				regdst   <= 1'b0;
+				aluop[1] <= 1'b0;
+				alusrc   <= 1'b1;
+			end
+			6'b000100: begin	/* beq */
+				aluop[0]  <= 1'b1;
+				aluop[1]  <= 1'b0;
+				branch_eq <= 1'b1;
+				regwrite  <= 1'b0;
+			end
+			6'b101011: begin	/* sw */
+				memwrite <= 1'b1;
+				aluop[1] <= 1'b0;
+				alusrc   <= 1'b1;
+				regwrite <= 1'b0;
+			end
+			6'b000101: begin	/* bne */
+				aluop[0]  <= 1'b1;
+				aluop[1]  <= 1'b0;
+				branch_ne <= 1'b1;
+				regwrite  <= 1'b0;
+			end
+			6'b000000: begin	/* add */
+			end
+			6'b000010: begin	/* j jump */
+				jump <= 1'b1;
+			end
+		endcase
+	end
+endmodule
+
+module alu(
+		input		[3:0]	ctl,
+		input		[31:0]	a, b,
+		output reg	[31:0]	out,
+		output				zero);
+
+	wire [31:0] sub_ab;
+	wire [31:0] add_ab;
+	wire 		oflow_add;
+	wire 		oflow_sub;
+	wire 		oflow;
+	wire 		slt;
+
+	assign zero = (0 == out);
+
+	assign sub_ab = a - b;
+	assign add_ab = a + b;
+	/*rc_adder #(.N(32)) add0(.a(a), .b(b), .s(add_ab));*/
+
+	// overflow occurs (with 2s complement numbers) when
+	// the operands have the same sign, but the sign of the result is
+	// different.  The actual sign is the opposite of the result.
+	// It is also dependent on whether addition or subtraction is performed.
+	assign oflow_add = (a[31] == b[31] && add_ab[31] != a[31]) ? 1 : 0;
+	assign oflow_sub = (a[31] == b[31] && sub_ab[31] != a[31]) ? 1 : 0;
+
+	assign oflow = (ctl == 4'b0010) ? oflow_add : oflow_sub;
+
+	// set if less than, 2s compliment 32-bit numbers
+	assign slt = oflow_sub ? ~(a[31]) : a[31];
+
+	always @(*) begin
+		case (ctl)
+			4'd2:  out <= add_ab;				/* add */
+			4'd0:  out <= a & b;				/* and */
+			4'd12: out <= ~(a | b);				/* nor */
+			4'd1:  out <= a | b;				/* or */
+			4'd7:  out <= {{31{1'b0}}, slt};	/* slt */
+			4'd6:  out <= sub_ab;				/* sub */
+			4'd13: out <= a ^ b;				/* xor */
+			default: out <= 0;
+		endcase
+	end
+
+endmodule
+
+module alu_control(
+		input wire [5:0] funct,
+		input wire [1:0] aluop,
+		output reg [3:0] aluctl);
+
+	reg [3:0] _funct;
+
+	always @(*) begin
+		case(funct[3:0])
+			4'd0:  _funct = 4'd2;	/* add */
+			4'd2:  _funct = 4'd6;	/* sub */
+			4'd5:  _funct = 4'd1;	/* or */
+			4'd6:  _funct = 4'd13;	/* xor */
+			4'd7:  _funct = 4'd12;	/* nor */
+			4'd10: _funct = 4'd7;	/* slt */
+			default: _funct = 4'd0;
+		endcase
+	end
+
+	always @(*) begin
+		case(aluop)
+			2'd0: aluctl = 4'd2;	/* add */
+			2'd1: aluctl = 4'd6;	/* sub */
+			2'd2: aluctl = _funct;
+			2'd3: aluctl = 4'd2;	/* add */
+			default: aluctl = 0;
+		endcase
+	end
+endmodule
+
+module dm(
+		input wire			clk,
+		input wire	[6:0]	addr,
+		input wire			rd, wr,
+		input wire 	[31:0]	wdata,
+		output wire	[31:0]	rdata);
+	parameter NMEM = 20;   // Number of memory entries,
+							// not the same as the memory size
+	parameter RM_DATA = "dm_data.txt";  // file to read data from
+
+	reg [31:0] mem [0:127];  // 32-bit memory with 128 entries
+
+        initial begin
+		$readmemh(RM_DATA, mem, 0, NMEM-1);
+	end
+		
+
+	always @(posedge clk) begin
+		if (wr) begin
+			mem[addr] <= wdata;
+		end
+	end
+
+	assign rdata = wr ? wdata : mem[addr];
+	// During a write, avoid the one cycle delay by reading from 'wdata'
+endmodule
 
 module cpu(
 		input wire clk);
