@@ -1,6 +1,6 @@
 // FETCH --------------------------------------------
 module fetch (input rst, clk, pc_src, input [31:0] add_res, output [31:0] d_inst, d_pc);
-  
+   
   wire [31:0] pc, new_pc, pc_4;
   wire [31:0] inst;
   
