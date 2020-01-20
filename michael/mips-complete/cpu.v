@@ -353,7 +353,7 @@ memread_s4,		/* mem_memread */
 	end
 
 	reg  [31:0] pc;
-	initial begin
+	initial begin 
 		pc <= 32'd0;
 	end
 

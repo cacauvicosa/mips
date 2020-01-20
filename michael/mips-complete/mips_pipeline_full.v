@@ -1,13 +1,27 @@
 // FETCH --------------------------------------------
 module fetch (input rst, clk, pc_src, input [31:0] add_res, output [31:0] d_inst, d_pc);
    
-  wire [31:0] pc, new_pc, pc_4;
+  wire [31:0] new_pc, pc_4;
   wire [31:0] inst;
+  reg [31:0] pc;
+
+  //initial begin
+    //pc_src <= 0;
+  //end
   
   assign pc_4 = 4 + pc;
-  assign new_pc = (pc_src) ? add_res : pc_4;
+  //assign new_pc = (pc_src) ? add_res : pc_4;
 
-  PC program_counter(new_pc, clk, rst, pc);
+  always @(posedge clk) begin
+    if (~rst)
+      pc <= 0;
+    else if (pc_src == 1'b1)
+      pc <= add_res;
+    else
+      pc <= pc_4;
+  end
+
+  //PC program_counter(new_pc, clk, rst, pc);
 
   reg [31:0] inst_mem [0:31];
 
@@ -35,7 +49,7 @@ module fetch (input rst, clk, pc_src, input [31:0] add_res, output [31:0] d_inst
   end
 
   // PIPE F -> D
-  IFID IFID (clk, pc_4, inst, d_pc, d_inst);
+  IFID IFID (clk, pc, inst, d_pc, d_inst);
   
 endmodule
 
@@ -372,12 +386,12 @@ endmodule
 
 // TOP -------------------------------------------
 module pipemips (input clk, rst, output [31:0] reg_writedata);
- 
+
   wire [31:0] d_inst, d_pc, e_pc, e_rd1, e_rd2, sig_ext, write_data, m_addRes, add_res, m_alures, m_readdata, w_readData, w_alures, reg_writedata;
   wire e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, m_regWrite, m_memtoreg, m_zero, m_memread, m_memwrite, w_regwrite, w_memtoreg, m_branch;
   wire [1:0] e_aluop;
   wire [4:0] e_inst1, e_inst2, e_muxRegDst, m_muxRegDst, w_muxRegDst;
-  
+
   // FETCH STAGE
   fetch fetch (rst, clk, pc_src, m_addRes, d_inst, d_pc);
   
