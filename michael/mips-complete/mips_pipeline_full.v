@@ -10,7 +10,6 @@ module fetch (input rst, clk, pc_src, input [31:0] add_res, output [31:0] d_inst
   //end
   
   assign pc_4 = 4 + pc;
-  //assign new_pc = (pc_src) ? add_res : pc_4;
 
   always @(posedge clk) begin
     if (~rst)
@@ -20,8 +19,6 @@ module fetch (input rst, clk, pc_src, input [31:0] add_res, output [31:0] d_inst
     else
       pc <= pc_4;
   end
-
-  //PC program_counter(new_pc, clk, rst, pc);
 
   reg [31:0] inst_mem [0:31];
 
@@ -252,6 +249,27 @@ module execute (
     .m_memwrite(m_memwrite),
     .m_branch(m_branch)
   );
+endmodule
+
+module forward (
+  input e_rs,
+  input e_rt,
+  input [31:0] e_rd, w_rd,
+  input m_regwrite, w_regwrite, 
+  output reg [1:0] forwardA, forwardB
+);
+
+  always @(*) begin
+
+    forwardA <= 2'b00;
+    forwardB <= 2'b00;
+
+    if (m_regwrite && e_rd == e_rs) forwardA <= 2'b10;
+    else if (m_regwrite && e_rd == e_rt) forwardB <= 2'b10;
+
+    if (w_regwrite && w_rd == e_rs) forwardA <= 2'b01;
+    else if (w_regwrite && w_rd == e_rt) forwardB <= 2'b01;
+  end  
 
 endmodule
 
