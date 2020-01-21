@@ -1,19 +1,17 @@
 // FETCH --------------------------------------------
-module fetch (input rst, clk, pc_src, input [31:0] add_res, output [31:0] d_inst, d_pc);
+module fetch (input rst, clk, pc_src, jump, input [31:0] add_res, jaddr, output [31:0] d_inst, d_pc);
    
   wire [31:0] new_pc, pc_4;
   wire [31:0] inst;
   reg [31:0] pc;
-
-  //initial begin
-    //pc_src <= 0;
-  //end
   
   assign pc_4 = 4 + pc;
 
   always @(posedge clk) begin
     if (~rst)
       pc <= 0;
+    else if (jump == 1'b1)
+      pc <= jaddr;
     else if (pc_src == 1'b1)
       pc <= add_res;
     else
@@ -69,33 +67,40 @@ endmodule
 //----------------------------------------------------
 // DECODE --------------------------------------------
 //----------------------------------------------------
-module decode (input d_clk, regwrite, input [31:0] inst, pc, writedata, input [4:0] muxRegDst, output [31:0] e_rd1, e_rd2, e_sigext, e_pc, output [4:0] e_inst1, e_inst2, output [1:0] e_aluop, output e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch);
+module decode (input d_clk, regwrite, e_memread_in, m_jump, pc_src, input [31:0] inst, pc, writedata, input [4:0] muxRegDst, output [31:0] e_rd1, e_rd2, e_sigext, e_pc, e_jaddr, output [4:0] e_rs, e_rt, e_rd, output [1:0] e_aluop, output e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch, flush, e_jump);
   
-  wire [31:0] data1, data2, sig_ext;
+  wire [31:0] data1, data2, sig_ext, jaddr;
   wire [4:0] rs, rt, rd;
   wire [5:0] opcode;
   wire [1:0] aluop;
-  wire branch, memread, memtoreg, MemWrite, regdst, alusrc, regwrite;
+  wire branch, memread, memtoreg, MemWrite, regdst, alusrc, regwrite, jump, flush;
+  wire hazard_detected;
   
   assign opcode = inst[31:26];
   assign rs     = inst[25:21];
   assign rt     = inst[20:16];
   assign rd     = inst[15:11];
   assign imm    = inst[15:0];
+  assign jaddr  = {pc[31:28], inst[25:0], {2{1'b0}}};
 
   assign sig_ext = (inst[15]) ? {16'hFFFF,imm} : {16'd0,imm};
+  
+  // hazard
+  assign hazard_detected = (e_memread_in && (e_rt == rs || e_rt == rt)) ? 1 : 0;
 
-  ControlUnit control (opcode, regdst, alusrc, memtoreg, regwrite_out, memread, memwrite, branch, aluop);
+  ControlUnit control (opcode, hazard_detected, regdst, alusrc, memtoreg, regwrite_out, memread, memwrite, branch, jump, aluop);
+
+  assign flush = (m_jump || pc_src);
 
   Register_Bank Registers (d_clk, regwrite, rs, rt, muxRegDst, writedata, data1, data2);
 
   // PIPE D -> E
-  IDEX IDEX (d_clk, regwrite_out, memtoreg, branch, memwrite, memread, regdst, alusrc, aluop, pc, data1, data2, sig_ext, rt, rd, e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, e_aluop, e_pc, e_rd1, e_rd2, e_sigext, e_inst1, e_inst2);
+  IDEX IDEX (d_clk, regwrite_out, memtoreg, branch, memwrite, memread, regdst, alusrc, jump, aluop, pc, data1, data2, sig_ext, jaddr, rs, rt, rd, e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, e_jump, e_aluop, e_pc, e_rd1, e_rd2, e_sigext, e_jaddr, e_rs, e_rt, e_rd);
 
 endmodule
 
 // pipe2 D -> E
-module IDEX (input d_clk, d_regwrite, d_memtoreg, d_branch, d_memwrite, d_memread, d_regdst, d_alusrc, input [1:0] d_aluop, input [31:0] d_pc, d_rd1, d_rd2, d_sigext, input [4:0] d_inst1, d_inst2, output reg e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, output reg [1:0] e_aluop, output reg [31:0] e_pc, e_rd1, e_rd2, e_sigext, output reg [4:0] e_inst1, e_inst2);
+module IDEX (input d_clk, d_regwrite, d_memtoreg, d_branch, d_memwrite, d_memread, d_regdst, d_alusrc, d_jump, input [1:0] d_aluop, input [31:0] d_pc, d_rd1, d_rd2, d_sigext, d_jaddr, input [4:0] d_rs, d_rt, d_rd, output reg e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, e_jump, output reg [1:0] e_aluop, output reg [31:0] e_pc, e_rd1, e_rd2, e_sigext, e_jaddr, output reg [4:0] e_rs, e_rt, e_rd);
   always @(posedge d_clk) begin
   	e_regwrite <= d_regwrite;
     e_memtoreg <= d_memtoreg;
@@ -106,78 +111,60 @@ module IDEX (input d_clk, d_regwrite, d_memtoreg, d_branch, d_memwrite, d_memrea
     e_aluop <= d_aluop;
     e_alusrc <= d_alusrc;
   	e_pc <= d_pc;
+    e_jaddr <= d_jaddr;
   	e_rd1 <= d_rd1;
   	e_rd2 <= d_rd2;
   	e_sigext <= d_sigext;
-  	e_inst1 <= d_inst1;
-  	e_inst2 <= d_inst2;
+  	e_rs <= d_rs;
+  	e_rt <= d_rt;
+    e_rd <= d_rd;
+    e_jump <= d_jump; 
   end
 endmodule
 
-module ControlUnit (input [5:0] opcode, output reg regdst, alusrc, memtoreg, regwrite, memread, memwrite, branch, output reg [1:0] aluop);
+module ControlUnit (input [5:0] opcode, input hazard_detected, output reg regdst, alusrc, memtoreg, regwrite, memread, memwrite, branch, jump, output reg [1:0] aluop);
+  
   always @(*) begin
     // defaults - NOP
-    regdst   <= 0 ;
-    alusrc   <= 0 ;
-    memtoreg <= 0 ;
-    regwrite <= 0 ;
-    memread  <= 0 ;
-    memwrite <= 0 ;
-    branch   <= 0 ;
-    aluop    <= 0 ;
-    case(opcode) 
-      6'd0: begin // R type
-        regdst <= 1 ;
-        alusrc <= 0 ;
-        memtoreg <= 0 ;
-        regwrite <= 1 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
-        aluop <= 2 ;
-			end
-			6'd4: begin // beq
-        regdst <= 0 ;
-        alusrc <= 0 ;
-        memtoreg <= 0 ;
-        regwrite <= 0 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
-        branch <= 1 ;
-        aluop <= 1 ;
-			end
-			6'd8: begin // addi
-        regdst <= 0 ;
-        alusrc <= 1 ;
-        memtoreg <= 0 ;
-        regwrite <= 1 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
-        aluop <= 0 ;
-      end
-			6'd35: begin // lw
-        regdst <= 0 ;
-        alusrc <= 1 ;
-        memtoreg <= 1 ;
-        regwrite <= 1 ;
-        memread <= 1 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
-        aluop <= 0 ;
-      end
-		  6'd43: begin // sw
-        regdst <= 0 ;
-        alusrc <= 1 ;
-        memtoreg <= 0 ;
-        regwrite <= 0 ;
-        memread <= 0 ;
-        memwrite <= 1 ;
-        branch <= 0 ;
-        aluop <= 0 ;
-      end
-      // TODO jump here
-    endcase
+    regdst   <= 0;
+    alusrc   <= 0;
+    memtoreg <= 0;
+    regwrite <= 0;
+    memread  <= 0;
+    memwrite <= 0;
+    branch   <= 0;
+    aluop    <= 0;
+    jump     <= 0;
+    if (!hazard_detected) begin
+      case(opcode) 
+        6'd0: begin // R type
+          regdst <= 1 ;
+          regwrite <= 1 ;
+          aluop <= 2 ;
+        end
+        6'd4: begin // beq
+          branch <= 1 ;
+          aluop <= 1 ;
+        end
+        6'd8: begin // addi
+          alusrc <= 1 ;
+          regwrite <= 1 ;
+        end
+        6'd35: begin // lw
+          alusrc <= 1 ;
+          memtoreg <= 1 ;
+          regwrite <= 1 ;
+          memread <= 1 ;
+        end
+        6'd43: begin // sw
+          alusrc <= 1 ;
+          memwrite <= 1 ;
+        end
+        6'd2: begin // jump
+          jump <= 1;
+        end
+      endcase
+    end
   end
 
 endmodule 
@@ -205,25 +192,45 @@ endmodule
 
 // EXECUTE STAGE -------------------------------------
 module execute (
-  input e_clk, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch, input [31:0] e_in1, e_in2, e_sigext, e_pc, input [4:0] e_inst20_16, e_inst15_11, input [1:0] e_aluop,
-  output [31:0] m_alures, m_rd2, m_addres, output [4:0] m_muxRegDst, output m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite
+  input e_clk, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch, e_jump, m_regw, w_regw, input [31:0] e_in1, e_in2, e_sigext, e_pc, m_data, w_data, e_jaddr, input [4:0] e_rs, e_rt, e_rd, m_rd, w_rd, input [1:0] e_aluop,
+  output [31:0] m_alures, m_rd2, m_addres, m_jaddr, output [4:0] m_muxRegDst, output m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite, m_jump
 );
 
   wire [31:0] alu_B, e_addres, e_aluout;
+  reg  [31:0] A, B;
   wire [3:0] aluctrl;
   wire [4:0] e_muxRegDst;
   wire e_zero;
+  wire [1:0] forwardA, forwardB;
+
+  // forward
+  forward forward_unit(e_rs, e_rt, e_rd, m_rd, w_rd, m_regw, w_regw, forwardA, forwardB);
+
+  always @(*) begin
+    case (forwardA)
+      2'b00 : A <= e_in1;
+      2'b01 : A <= w_data;
+      2'b10 : A <= m_data;
+      default : A <= e_in1; 
+    endcase
+    case (forwardB)
+      2'b00 : B <= alu_B;
+      2'b01 : B <= w_data;
+      2'b10 : B <= m_data;
+      default : B <= e_in1; 
+    endcase
+  end
+
+  assign alu_B = (e_alusrc) ? e_sigext : B;
 
   Add Add (e_pc, e_sigext, e_addres);
 
-  assign alu_B = (e_alusrc) ? e_sigext : e_in2 ;
-
   //Unidade Lógico Aritimética
-  ALU alu (aluctrl, e_in1, alu_B, e_aluout, e_zero);
+  ALU alu (aluctrl, A, alu_B, e_aluout, e_zero);
 
   alucontrol alucontrol (e_aluop, e_sigext[5:0], aluctrl);
   
-  assign e_muxRegDst = (e_regdst) ?  e_inst15_11 : e_inst20_16;
+  assign e_muxRegDst = (e_regdst) ? e_rd : e_rt;
 
   // PIPE E -> M
   EXMEM EXMEM (
@@ -234,10 +241,11 @@ module execute (
     .e_zero(e_zero),
     .e_branch(e_branch),
     .e_alures(e_aluout),
-    .e_rd2(e_in2),
+    .e_rd2(B),
     .e_muxRegDst(e_muxRegDst),
     .e_memread(e_memread),
     .e_memwrite(e_memwrite),
+    .e_jump(e_jump),
     .m_regwrite(m_regwrite),
     .m_memtoreg(m_memtoreg),
     .m_addRes(m_addres),
@@ -247,28 +255,24 @@ module execute (
     .m_muxRegDst(m_muxRegDst),
     .m_memread(m_memread),
     .m_memwrite(m_memwrite),
-    .m_branch(m_branch)
+    .m_branch(m_branch),
+    .m_jump(m_jump)
   );
 endmodule
 
 module forward (
-  input e_rs,
-  input e_rt,
-  input [31:0] e_rd, w_rd,
+  input [4:0] e_rs,
+  input [4:0] e_rt,
+  input [4:0] e_rd,
+  input [4:0] m_rd,
+  input [4:0] w_rd,
   input m_regwrite, w_regwrite, 
   output reg [1:0] forwardA, forwardB
 );
 
   always @(*) begin
-
-    forwardA <= 2'b00;
-    forwardB <= 2'b00;
-
-    if (m_regwrite && e_rd == e_rs) forwardA <= 2'b10;
-    else if (m_regwrite && e_rd == e_rt) forwardB <= 2'b10;
-
-    if (w_regwrite && w_rd == e_rs) forwardA <= 2'b01;
-    else if (w_regwrite && w_rd == e_rt) forwardB <= 2'b01;
+    forwardA <= (m_regwrite && m_rd != 0 && m_rd == e_rs) ? 2'b10 : (w_regwrite && w_rd == e_rs) ? 2'b01 : 2'b00;
+    forwardB <= (m_regwrite && m_rd != 0 && m_rd == e_rt) ? 2'b10 : (w_regwrite && w_rd == e_rt) ? 2'b01 : 2'b00;
   end  
 
 endmodule
@@ -331,19 +335,23 @@ module EXMEM (
   input e_zero,
   input [31:0] e_alures,
   input [31:0] e_rd2,
+  input [31:0] e_jaddr,
   input [4:0]  e_muxRegDst,
   input e_memread,
   input e_memwrite,
+  input e_jump,
   output reg m_regwrite,
   output reg m_memtoreg,
   output reg [31:0] m_addRes,
   output reg m_zero,
   output reg [31:0] m_alures,
   output reg [31:0] m_rd2,
+  output reg [31:0] m_jaddr,
   output reg [4:0]  m_muxRegDst,
   output reg m_memread,
   output reg m_memwrite,
-  output reg m_branch
+  output reg m_branch,
+  output reg m_jump
 );
   always @(posedge e_clk) begin
     m_regwrite <= e_regwrite;
@@ -356,11 +364,13 @@ module EXMEM (
     m_memread <= e_memread;
     m_memwrite <= e_memwrite;
     m_branch <= e_branch;
+    m_jump <= e_jump;
+    m_jaddr <= e_jaddr;
   end
 endmodule
 
 // MEMORY STAGE ----------------------------------------
-module memory (input m_clk, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite, input [31:0] m_alures, writedata, input [4:0] m_muxRegDst, output [31:0] w_readdata, w_alures, output w_memtoreg, w_regwrite, pc_src, output [4:0] w_muxRegDst);
+module memory (input m_clk, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite, input [31:0] m_alures, writedata, e_jaddr, input [4:0] m_muxRegDst, output [31:0] w_readdata, w_alures, output w_memtoreg, w_regwrite, pc_src, output [4:0] w_muxRegDst);
 
   wire [31:0] m_readdata;
   reg [31:0] memory [0:127]; 
@@ -372,7 +382,7 @@ module memory (input m_clk, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread,
       memory[i] = i;
   end
 
-  assign pc_src = (m_zero & m_branch) ? 1 : 0; 
+  assign pc_src = (m_zero & m_branch) ? 1 : 0;
 
   assign m_readdata = (m_memread) ? memory[m_alures[31:2]] : 0;
 
@@ -405,23 +415,22 @@ endmodule
 // TOP -------------------------------------------
 module pipemips (input clk, rst, output [31:0] reg_writedata);
 
-  wire [31:0] d_inst, d_pc, e_pc, e_rd1, e_rd2, sig_ext, write_data, m_addRes, add_res, m_alures, m_readdata, w_readData, w_alures, reg_writedata;
-  wire e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, m_regWrite, m_memtoreg, m_zero, m_memread, m_memwrite, w_regwrite, w_memtoreg, m_branch;
+  wire [31:0] d_inst, e_jaddr, m_jaddr, d_pc, e_pc, e_rd1, e_rd2, sig_ext, write_data, m_addRes, add_res, m_alures, m_readdata, w_readData, w_alures, reg_writedata;
+  wire e_jump, e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, m_regWrite, m_memtoreg, m_zero, m_memread, m_memwrite, w_regwrite, w_memtoreg, m_branch;
   wire [1:0] e_aluop;
-  wire [4:0] e_inst1, e_inst2, e_muxRegDst, m_muxRegDst, w_muxRegDst;
+  wire [4:0] e_rs, e_rt, e_rd, e_muxRegDst, m_muxRegDst, w_muxRegDst;
 
   // FETCH STAGE
-  fetch fetch (rst, clk, pc_src, m_addRes, d_inst, d_pc);
+  fetch fetch (rst, clk, pc_src, m_jump, m_addRes, m_jaddr, d_inst, d_pc);
   
   // DECODE STAGE
-  decode decode (clk, w_regwrite, d_inst, d_pc, reg_writedata, w_muxRegDst, e_rd1, e_rd2, sig_ext, e_pc, e_inst1, e_inst2, e_aluop, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch);
+  decode decode (clk, w_regwrite, e_memread, m_jump, pc_src, d_inst, d_pc, reg_writedata, w_muxRegDst, e_rd1, e_rd2, sig_ext, e_pc, e_jaddr, e_rs, e_rt, e_rd, e_aluop, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch, flush, e_jump);
   
   // EXECUTE STAGE
-  execute execute (clk, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch, e_rd1, e_rd2, sig_ext, e_pc, e_inst1, e_inst2, e_aluop, m_alures, write_data, m_addRes, m_muxRegDst, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite);
+  execute execute (clk, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtoreg, e_memwrite, e_branch, e_jump, m_regwrite, m_regwrite, e_rd1, e_rd2, sig_ext, e_pc, m_alures, reg_writedata, e_jaddr, e_rs, e_rt, e_rd, m_muxRegDst, w_muxRegDst, e_aluop, m_alures, write_data, m_jaddr, m_addRes, m_muxRegDst, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite, m_jump);
 
   // MEMORY STAGE
-  memory memory (clk, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite, m_alures, write_data, m_muxRegDst, w_readData, w_alures, w_memtoreg, w_regwrite, pc_src, w_muxRegDst);
-
+  memory memory (clk, m_branch, m_zero, m_regwrite, m_memtoreg, m_memread, m_memwrite, m_alures, write_data, e_jaddr, m_muxRegDst, w_readData, w_alures, w_memtoreg, w_regwrite, pc_src, w_muxRegDst);
   // WRITEBACK STAGE
   writeback writeback (w_readData, w_alures, w_memtoreg, reg_writedata);
 
