@@ -349,7 +349,7 @@ memread_s4,		/* mem_memread */
 		clock_counter <= 6'd1;
 	end
         always @(posedge clk) begin
-                clock_counter <= clock_counter + 1;
+            clock_counter <= clock_counter + 1;
 	end
 
 	reg  [31:0] pc;
