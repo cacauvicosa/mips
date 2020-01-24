@@ -49,14 +49,13 @@ module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] i
     */
 
     inst_mem[0] <= 32'h00000000; // nop
-    inst_mem[1] <= 32'h200a0005; // addi $t2,$zero,5
-    inst_mem[2] <= 32'h200b0007; // addi $t3,$zero,7
-    inst_mem[3] <= 32'h200c0002; // addi $t4,$zero,2
-    inst_mem[4] <= 32'h200d0003; // addi $t5,$zero,3
-    inst_mem[5] <= 32'h014b5020; // add $t2,$t2,$t3
-    inst_mem[6] <= 32'h016c5820; // add $t3,$t3,$t4
-    inst_mem[7] <= 32'h018c6020; // add $t4,$t4,$t4
-    inst_mem[8] <= 32'h01aa6820; // add $t5,$t5,$t2
+    inst_mem[1] <= 32'h00500113; // addi x2,x0,5  ok
+    //inst_mem[1] <= 32'hfff00113; // addi x2,x0,-1 ok
+    //inst_mem[1] <= 32'h // ADD x0, x2, x3 
+    //inst_mem[5] <= 32'h014b5020; // add $t2,$t2,$t3
+    //inst_mem[6] <= 32'h016c5820; // add $t3,$t3,$t4
+    //inst_mem[7] <= 32'h018c6020; // add $t4,$t4,$t4
+    //inst_mem[8] <= 32'h01aa6820; // add $t5,$t5,$t2
   end
   
 endmodule
@@ -105,20 +104,20 @@ inst +------------+   control   |                ^            |            |    
        | +---------------------------->+ D |                                      |
        +-------------------------------+---+--------------------------------------+--
 */
-module decode (input [31:0] inst, writedata, input clk, output [31:0] data1, data2, ImmGen, output alusrc, memread, memwrite, memtoreg, branch, output [1:0] aluop, output [3:0] funct);
+module decode (input [31:0] inst, writedata, input clk, output [31:0] data1, data2, ImmGen, output alusrc, memread, memwrite, memtoreg, branch, output [1:0] aluop, output [10:0] funct);
   
   wire branch, memread, memtoreg, MemWrite, regdst, alusrc, regwrite;
   wire [1:0] aluop; 
   wire [4:0] writereg, rs1, rs2, rd;
   wire [6:0] opcode;
-  wire [3:0] funct;
+  wire [10:0] funct;
   wire [31:0] ImmGen;
 
   assign opcode = inst[6:0];
   assign rs1    = inst[19:15];
   assign rs2    = inst[24:20];
   assign rd     = inst[11:7];
-  assign funct  = {inst[30],inst[14:12]};
+  assign funct = {inst[31:25],inst[30],inst[14:12]};
 
   ControlUnit control (opcode, inst, regdst, alusrc, memtoreg, regwrite, memread, memwrite, branch, aluop, ImmGen);
   
@@ -212,11 +211,11 @@ aluop   +---------->+ CTRL |                    |
           |         +------+                    |
           +-------------------------------------+
 */
-module execute (input [31:0] in1, in2, ImmGen, input alusrc, input [1:0] aluop, input [3:0] funct, output zero, output [31:0] aluout);
+module execute (input [31:0] in1, in2, ImmGen, input alusrc, input [1:0] aluop, input [10:0] funct, output zero, output [31:0] aluout);
 
   wire [31:0] alu_B;
   wire [3:0] aluctrl;
-
+  
   assign alu_B = (alusrc) ? ImmGen : in2 ;
 
   //Unidade Lógico Aritimética
@@ -226,20 +225,25 @@ module execute (input [31:0] in1, in2, ImmGen, input alusrc, input [1:0] aluop, 
 
 endmodule
 
-module alucontrol (input [1:0] aluop, input [3:0] funct, output reg [3:0] alucontrol);
-   
-  always @(aluop or funct) begin
+module alucontrol (input [1:0] aluop, input [10:0] funct, output reg [3:0] alucontrol);
+  
+  wire [7:0] funct7;
+  wire [3:0] funct3;
+
+  assign funct3 = funct[3:0];
+  assign funct7 = funct[10:4];
+
+  always @(aluop or funct3 or funct7) begin
     case (aluop)
       0: alucontrol <= 4'd2; // ADD to SW and LW
       1: alucontrol <= 4'd6; // SUB to branch
       default: begin
-        case (funct)
-          2: alucontrol <= 4'd2; // ADD
-          6: alucontrol <= 4'd6; // SUB
-          0: alucontrol <= 4'd0; // AND
-          1: alucontrol <= 4'd1; // OR
+        case (funct3)
+          0: alucontrol <= (funct7 == 0) ? /*ADD*/ 4'd2 : /*SUB*/ 4'd6; 
+          2: alucontrol <= 4'd7; // SLT
+          6: alucontrol <= 4'd1; // OR
           //39: alucontrol <= 4'd12; // NOR
-          //42: alucontrol <= 4'd7; // SLT
+          7: alucontrol <= 4'd0; // AND
           default: alucontrol <= 4'd15; // Nop
         endcase
       end
@@ -323,7 +327,7 @@ module mips (input clk, rst, output [31:0] writedata);
   
   wire [31:0] inst, sigext, data1, data2, aluout, readdata;
   wire zero, memread, memwrite, memtoreg, branch, alusrc;
-  wire [3:0] funct;
+  wire [10:0] funct;
   wire [1:0] aluop;
   
   // FETCH STAGE
