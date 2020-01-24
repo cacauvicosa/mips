@@ -40,22 +40,9 @@ module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] i
 
   initial begin
     // Exemplos
-    /*
-    inst_mem[0] <= 32'h00000000; // nop
-    inst_mem[1] <= 32'h8c010000; // lw r1, 0(r0)   =>   r1 = m[r0+0] 
-    inst_mem[2] <= 32'h8c020004; // lw r2, 4(r0)   =>   r2 = m[r0+4] 
-    inst_mem[3] <= 32'h00220820; // add r1,r1,r2   =>   r1 = r1 + r2 
-    inst_mem[4] <= 32'hac010008; // sw r1, 8(r0)   =>   m[r0+8] = r1
-    */
-
     inst_mem[0] <= 32'h00000000; // nop
     inst_mem[1] <= 32'h00500113; // addi x2,x0,5  ok
     //inst_mem[1] <= 32'hfff00113; // addi x2,x0,-1 ok
-    //inst_mem[1] <= 32'h // ADD x0, x2, x3 
-    //inst_mem[5] <= 32'h014b5020; // add $t2,$t2,$t3
-    //inst_mem[6] <= 32'h016c5820; // add $t3,$t3,$t4
-    //inst_mem[7] <= 32'h018c6020; // add $t4,$t4,$t4
-    //inst_mem[8] <= 32'h01aa6820; // add $t5,$t5,$t2
   end
   
 endmodule
@@ -286,7 +273,7 @@ writedata +----->+                 |  |
                          +
                        memwrite
 */
-module memory (input [31:0] addr, writedata, input memread, memwrite, clk, output [31:0] readdata);
+module memory (input [31:0] address, writedata, input memread, memwrite, clk, output [31:0] readdata);
 
   integer i;
   reg [31:0] memory [0:127]; 
@@ -297,11 +284,11 @@ module memory (input [31:0] addr, writedata, input memread, memwrite, clk, outpu
       memory[i] <= i;
   end
 
-  assign readdata = memory[addr[31:2]];
+  assign readdata = memory[address[31:2]];
 
   always @(posedge clk) begin
     if (memwrite)
-      memory[addr[31:2]] <= writedata;
+      memory[address[31:2]] <= writedata;
 	end
 endmodule
 
