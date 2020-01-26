@@ -28,16 +28,17 @@ module fetch (input rst, clk, pc_src, jump, flush, input [31:0] add_res, jaddr, 
   end
    
   assign pc_4 = 4 + pc;
-  assign new_pc = (pc_src) ? add_res : pc_4;
+  assign new_pc = (jump) ? jaddr : (pc_src) ? add_res : pc_4;
 
   assign inst = inst_mem[pc[31:2]];
 
   PC program_counter(new_pc, clk, rst, pc);
 
   //assign inst = inst_mem[pc[8:2]][31:0]; //inst_mem[pc[31:2]];
-  
+
   // PIPE F -> D
   IFID IFID (clk, flush, pc_4, inst, d_pc, d_inst);
+
 endmodule
 
 // pipe1 F -> D
@@ -390,7 +391,7 @@ module writeback (input [31:0] readdata, aluout, input memtoreg, output [31:0] w
 endmodule
 
 // TOP -------------------------------------------
-module pipemips (input wire clk, rst, output [31:0] reg_writedata);
+module pipemips (input clk, rst, output [31:0] reg_writedata);
 
   wire [31:0] d_inst, e_jaddr, m_jaddr, d_pc, e_pc, e_rd1, e_rd2, sig_ext, write_data, m_addRes, add_res, m_alures, m_readdata, w_readData, w_alures, reg_writedata;
   wire flush, e_jump, e_regwrite, e_memtoreg, e_branch, e_memwrite, e_memread, e_regdst, e_alusrc, m_regWrite, m_memtoreg, m_zero, m_memread, m_memwrite, w_regwrite, w_memtoreg, m_branch;
