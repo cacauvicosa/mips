@@ -8,7 +8,7 @@ module fetch (input rst, clk, pc_src, jump, flush, input w_stall, input [31:0] a
 
   initial begin
     stall <= 1;  // don't remove
-    pc <= 0;
+    //pc <= 0;
 
     // Exemplos 
     /*
@@ -41,7 +41,7 @@ module fetch (input rst, clk, pc_src, jump, flush, input w_stall, input [31:0] a
     if (w_stall != "x")
       stall <= w_stall;
     if (stall) 
-      pc <= pc;
+      pc <= 0;
     else 
       pc <= pc_4;
   end
@@ -60,10 +60,10 @@ module IFID (input f_clk, flush, f_stall, input [31:0] f_pc, f_inst, output reg 
     d_pc    <= f_pc;
     d_inst  <= f_inst;
     d_stall <= f_stall;
-    if (flush) begin
-      d_inst <= 0;
-      d_pc   <= 0;
-    end 
+    //if (flush != "x") begin
+    //  d_inst <= 0;
+    //  d_pc   <= 0;
+    //end 
   end
 endmodule
 
@@ -161,7 +161,7 @@ module ControlUnit (input [5:0] opcode, input hazard_detected, output reg regdst
     branch   <= 0;
     aluop    <= 0;
     jump     <= 0;
-    if (hazard_detected == 1'b0) begin
+    //if (hazard_detected == 1'b0) begin
       case(opcode) 
         6'd0: begin // R type
           regdst <= 1 ;
@@ -190,7 +190,7 @@ module ControlUnit (input [5:0] opcode, input hazard_detected, output reg regdst
           jump <= 1;
         end
       endcase
-    end
+    //end
   end
 
 endmodule 
@@ -246,7 +246,7 @@ module execute (input e_clk, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtor
     endcase
   end
 
-  assign e_addres = e_pc + (e_sigext[31:2] << 2);
+  assign e_addres = e_pc + e_sigext[31:2];
 
   //Unidade Lógico Aritimética
   ALU alu (aluctrl, A, alu_B, e_aluout, e_zero);
@@ -337,6 +337,7 @@ module EXMEM (input e_clk, e_regwrite, e_memtoreg, e_branch, e_zero, e_memread, 
     m_branch    <= e_branch;
     m_jump      <= e_jump;
     m_jaddr     <= e_jaddr;
+    /*
     if (flush) begin
       m_regwrite  <= 0;
       m_memtoreg  <= 0;
@@ -351,6 +352,7 @@ module EXMEM (input e_clk, e_regwrite, e_memtoreg, e_branch, e_zero, e_memread, 
       m_jump      <= 0;
       m_jaddr     <= 0;
     end
+    */
   end
 endmodule
 

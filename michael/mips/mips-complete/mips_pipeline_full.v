@@ -34,8 +34,6 @@ module fetch (input rst, clk, pc_src, jump, flush, input [31:0] add_res, jaddr, 
 
   PC program_counter(new_pc, clk, rst, pc);
 
-  //assign inst = inst_mem[pc[8:2]][31:0]; //inst_mem[pc[31:2]];
-
   // PIPE F -> D
   IFID IFID (clk, flush, pc_4, inst, d_pc, d_inst);
 
@@ -238,7 +236,7 @@ module execute (input e_clk, e_alusrc, e_regdst, e_regwrite, e_memread, e_memtor
     endcase
   end
 
-  assign e_addres = e_pc + (e_sigext[31:2] << 2);
+  assign e_addres = e_pc + e_sigext[31:2];
 
   //Unidade Lógico Aritimética
   ALU alu (aluctrl, A, alu_B, e_aluout, e_zero);
