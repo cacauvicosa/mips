@@ -15,8 +15,8 @@ module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] i
     // Exemplos
     inst_mem[0] <= 32'h00000000; // nop
     //inst_mem[1] <= 32'h00500113; // addi x2,x0,5  ok
-    //inst_mem[1] <= 32'h00202223; // sw x2, 8(x0)
-    inst_mem[1] <= 32'h0050a423;
+    //inst_mem[1] <= 32'h00202223; // sw x2, 8(x0) ok
+    inst_mem[1] <= 32'h0050a423; // sw x5, 8(x1) ok
     //inst_mem[2] <= 32'h0000a003; // lw x1, x0(0) ok
     //inst_mem[1] <= 32'hfff00113; // addi x2,x0,-1 ok
     //inst_mem[2] <= 32'h00318133; // add x2, x3, x3 ok
