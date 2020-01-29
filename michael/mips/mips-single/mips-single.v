@@ -65,7 +65,7 @@ module PC (input [31:0] pc_in, input clk, rst, output reg [31:0] pc_out);
 
   always @(posedge clk) begin
     pc_out <= pc_in;
-    if (rst)
+    if (~rst)
       pc_out <= 0;
   end
 
@@ -109,8 +109,9 @@ module decode (input [31:0] inst, writedata, input clk, output [31:0] data1, dat
   
   wire branch, memread, memtoreg, MemWrite, regdst, alusrc, regwrite;
   wire [1:0] aluop; 
-  wire [4:0] writereg;
+  wire [4:0] writereg, rs, rt, rd;
 
+  
   assign writereg = (regdst) ? inst[15:11] : inst[20:16];
 
   assign sigext = (inst[15]) ? {16'hFFFF,inst[15:0]} : {16'd0,inst[15:0]};
@@ -127,66 +128,37 @@ module ControlUnit (input [5:0] opcode, output regdst, alusrc, memtoreg, regwrit
   reg regdst, alusrc, memtoreg, regwrite, memread, memwrite, branch;
 
   always @(opcode) begin
+    regdst   <= 0;
+    alusrc   <= 0;
+    memtoreg <= 0;
+    regwrite <= 0;
+    memread  <= 0;
+    memwrite <= 0;
+    branch   <= 0;
+    aluop    <= 0;
     case(opcode) 
       6'd0: begin // R type
         regdst <= 1 ;
-        alusrc <= 0 ;
-        memtoreg <= 0 ;
         regwrite <= 1 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
         aluop <= 2 ;
 			end
 			6'd4: begin // beq
-        regdst <= 0 ;
-        alusrc <= 0 ;
-        memtoreg <= 0 ;
-        regwrite <= 0 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
         branch <= 1 ;
         aluop <= 1 ;
 			end
 			6'd8: begin // addi
-        regdst <= 0 ;
         alusrc <= 1 ;
-        memtoreg <= 0 ;
         regwrite <= 1 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
-        aluop <= 0 ;
       end
 			6'd35: begin // lw
-        regdst <= 0 ;
         alusrc <= 1 ;
         memtoreg <= 1 ;
         regwrite <= 1 ;
         memread <= 1 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
-        aluop <= 0 ;
       end
 			6'd43: begin // sw
-        regdst <= 0 ;
         alusrc <= 1 ;
-        memtoreg <= 0 ;
-        regwrite <= 0 ;
-        memread <= 0 ;
         memwrite <= 1 ;
-        branch <= 0 ;
-        aluop <= 0 ;
-      end
-			default: begin //nop
-        regdst <= 0 ;
-        alusrc <= 0 ;
-        memtoreg <= 0 ;
-        regwrite <= 0 ;
-        memread <= 0 ;
-        memwrite <= 0 ;
-        branch <= 0 ;
-        aluop <= 0 ;
       end
     endcase
   end
@@ -201,7 +173,7 @@ module Register_Bank (input clk, regwrite, input [4:0] read1, read2, writereg, i
   // fill the memory
   initial begin
     for (i = 0; i <= 31; i++) 
-      memory[i] = i;
+      memory[i] <= i;
   end
 
   assign data1 = (regwrite && read1==writereg) ? writedata : memory[read1];
@@ -312,10 +284,10 @@ module memory (input [31:0] addr, writedata, input memread, memwrite, clk, outpu
   // fill the memory
   initial begin
     for (i = 0; i <= 127; i++) 
-      memory[i] = i;
+      memory[i] <= i;
   end
 
-  assign readdata = memory[addr[31:2]];
+  assign readdata = (memread) ? memory[addr[31:2]] : 0;
 
   always @(posedge clk) begin
     if (memwrite)
@@ -336,8 +308,10 @@ aluout   +--->+ X |  |
           +----------+
 */
 
-module writeback (input [31:0] aluout, readdata, input memtoreg, output [31:0] write_data);
-  assign write_data = (memtoreg) ? readdata : aluout;
+module writeback (input [31:0] aluout, readdata, input memtoreg, output reg [31:0] write_data);
+  always @(memtoreg) begin
+    write_data <= (memtoreg) ? readdata : aluout;
+  end
 endmodule
 
 // TOP -------------------------------------------

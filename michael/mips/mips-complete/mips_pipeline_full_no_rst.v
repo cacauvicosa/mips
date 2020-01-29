@@ -34,8 +34,6 @@ module fetch (input rst, clk, pc_src, jump, flush, input w_stall, input [31:0] a
   //assign new_pc = (stall) ? pc : (jump == 1'b1) ? jaddr : (pc_src) ? add_res : pc_4;
   //assign new_pc = pc;
 
-  
-
   always @(posedge clk) begin
     pc_4 <= 4 + pc;
     if (w_stall != "x")
