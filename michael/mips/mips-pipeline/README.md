@@ -1,3 +1,3 @@
-Single Mips Datapath
+Single Pipeline Datapath
 
 ![](./mips-pipeline.png)
