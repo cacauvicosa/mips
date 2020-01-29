@@ -1,3 +1,3 @@
-MIPS Single
+Single Mips Datapath
 
-![Mips Single](mips-single.png)
+![](./mips-single.png)
