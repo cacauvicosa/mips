@@ -110,15 +110,19 @@ module decode (input [31:0] inst, writedata, input clk, output [31:0] data1, dat
   wire branch, memread, memtoreg, MemWrite, regdst, alusrc, regwrite;
   wire [1:0] aluop; 
   wire [4:0] writereg, rs, rt, rd;
-
-  
-  assign writereg = (regdst) ? inst[15:11] : inst[20:16];
+  wire [5:0] opcode;
 
   assign sigext = (inst[15]) ? {16'hFFFF,inst[15:0]} : {16'd0,inst[15:0]};
-
-  ControlUnit control (inst[31:26], regdst, alusrc, memtoreg, regwrite, memread, memwrite, branch, aluop);
+  assign opcode = inst[31:26];
+  assign rs = inst[25:21];
+  assign rt = inst[20:16];
+  assign rd = inst[15:11];
   
-  Register_Bank Registers (clk, regwrite, inst[25:21], inst[20:16], writereg, writedata, data1, data2); 
+  ControlUnit control (opcode, regdst, alusrc, memtoreg, regwrite, memread, memwrite, branch, aluop);
+
+  assign writereg = (regdst) ? rd : rt;
+  
+  Register_Bank Registers (clk, regwrite, rs, rt, writereg, writedata, data1, data2); 
 
 endmodule
 
@@ -165,7 +169,7 @@ module ControlUnit (input [5:0] opcode, output regdst, alusrc, memtoreg, regwrit
 
 endmodule 
 
-module Register_Bank (input clk, regwrite, input [4:0] read1, read2, writereg, input [31:0] writedata, output [31:0] data1, data2);
+module Register_Bank (input clk, regwrite, input [4:0] read1, read2, writereg, input [31:0] writedata, output reg [31:0] data1, data2);
 
   integer i;
   reg [31:0] memory [0:31]; // 32 registers de 32 bits cada
@@ -175,11 +179,10 @@ module Register_Bank (input clk, regwrite, input [4:0] read1, read2, writereg, i
     for (i = 0; i <= 31; i++) 
       memory[i] <= i;
   end
-
-  assign data1 = (regwrite && read1==writereg) ? writedata : memory[read1];
-  assign data2 = (regwrite && read2==writereg) ? writedata : memory[read2];
 	
   always @(posedge clk) begin
+    data1 <= (regwrite && read1==writereg) ? writedata : memory[read1];
+    data2 <= (regwrite && read2==writereg) ? writedata : memory[read2];
     if (regwrite)
       memory[writereg] <= writedata;
   end
