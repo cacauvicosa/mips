@@ -1,66 +1,3 @@
-/*--------------------- FETCH -----------------+
-       +---------------------------------------+
-       |        +---+                          |
-  zero +------->+ A |                          |
-       |        | N +----------------+         |
-branch +------->+ D |                |         |
-       |        +---+                |         |
-       |               +---+         |         |
-sigext +-------------->+ A |         |         |
-       |               | D |         v         |
-       |      +---+ +->+ D +--+    +-+-+       |
-       | 4 +->+ A | |  +---+  +--->+ M |       |
-       |      | D | |              | U +----+  |
-       |   +->+ D +-+------------->+ X |    |  |
-       |   |  +---+                +---+    |  |
-       |   |                                |  |
-       |   |  +-----------------------------+  |
-       |   |  |                                |
-       |   |  |  +----+      +----------+      |
-       |   |  |  |    |      |          |      |
-       |   |  +--+ PC +--+---+   inst   +-----------> inst
-       |   |     |    |  |   |   mem    |      |
-       |   |     +----+  |   |          |      |
-       |   |             |   +----------+      |
-       |   +-------------+                     |
-       +---------------------------------------+
-*/       
-module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] inst);
-  
-  wire [31:0] pc, pc_4, new_pc;
-
-  assign pc_4 = 4 + pc; // pc+4  Adder
-  assign new_pc = (branch & zero) ? pc_4 + sigext : pc_4; // new PC Mux
-
-  PC program_counter(new_pc, clk, rst, pc);
-
-  reg [31:0] inst_mem [0:31];
-
-  assign inst = inst_mem[pc[31:2]];
-
-  initial begin
-    // Exemplos 
-    /*
-    inst_mem[0] <= 32'h00000000; // nop
-    inst_mem[1] <= 32'h8c010000; // lw r1, 0(r0)   =>   r1 = m[r0+0] 
-    inst_mem[2] <= 32'h8c020004; // lw r2, 4(r0)   =>   r2 = m[r0+4] 
-    inst_mem[3] <= 32'h00220820; // add r1,r1,r2   =>   r1 = r1 + r2 
-    inst_mem[4] <= 32'hac010008; // sw r1, 8(r0)   =>   m[r0+8] = r1
-    */
-
-    inst_mem[0] <= 32'h00000000; // nop
-    inst_mem[1] <= 32'h200a0005; // addi $t2,$zero,5
-    inst_mem[2] <= 32'h200b0007; // addi $t3,$zero,7
-    inst_mem[3] <= 32'h200c0002; // addi $t4,$zero,2
-    inst_mem[4] <= 32'h200d0003; // addi $t5,$zero,3
-    inst_mem[5] <= 32'h014b5020; // add $t2,$t2,$t3
-    inst_mem[6] <= 32'h016c5820; // add $t3,$t3,$t4
-    inst_mem[7] <= 32'h018c6020; // add $t4,$t4,$t4
-    inst_mem[8] <= 32'h01aa6820; // add $t5,$t5,$t2
-  end
-  
-endmodule
-
 module PC (input [31:0] pc_in, input clk, rst, output reg [31:0] pc_out);
 
   always @(posedge clk) begin
@@ -314,6 +251,68 @@ aluout   +--->+ X |  |
 module writeback (input [31:0] aluout, readdata, input memtoreg, output reg [31:0] write_data);
   always @(memtoreg) begin
     write_data <= (memtoreg) ? readdata : aluout;
+  end
+endmodule
+
+/*--------------------- FETCH -----------------+
+       +---------------------------------------+
+       |        +---+                          |
+  zero +------->+ A |                          |
+       |        | N +----------------+         |
+branch +------->+ D |                |         |
+       |        +---+                |         |
+       |               +---+         |         |
+sigext +-------------->+ A |         |         |
+       |               | D |         v         |
+       |      +---+ +->+ D +--+    +-+-+       |
+       | 4 +->+ A | |  +---+  +--->+ M |       |
+       |      | D | |              | U +----+  |
+       |   +->+ D +-+------------->+ X |    |  |
+       |   |  +---+                +---+    |  |
+       |   |                                |  |
+       |   |  +-----------------------------+  |
+       |   |  |                                |
+       |   |  |  +----+      +----------+      |
+       |   |  |  |    |      |          |      |
+       |   |  +--+ PC +--+---+   inst   +-----------> inst
+       |   |     |    |  |   |   mem    |      |
+       |   |     +----+  |   |          |      |
+       |   |             |   +----------+      |
+       |   +-------------+                     |
+       +---------------------------------------+
+*/       
+module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] inst);
+  
+  wire [31:0] pc, pc_4, new_pc;
+
+  assign pc_4 = 4 + pc; // pc+4  Adder
+  assign new_pc = (branch & zero) ? pc_4 + sigext : pc_4; // new PC Mux
+
+  PC program_counter(new_pc, clk, rst, pc);
+
+  reg [31:0] inst_mem [0:31];
+
+  assign inst = inst_mem[pc[31:2]];
+
+  initial begin
+    // Exemplos 
+    /*
+    inst_mem[0] <= 32'h00000000; // nop
+    inst_mem[1] <= 32'h8c010000; // lw r1, 0(r0)   =>   r1 = m[r0+0] 
+    inst_mem[2] <= 32'h8c020004; // lw r2, 4(r0)   =>   r2 = m[r0+4] 
+    inst_mem[3] <= 32'h00220820; // add r1,r1,r2   =>   r1 = r1 + r2 
+    inst_mem[4] <= 32'hac010008; // sw r1, 8(r0)   =>   m[r0+8] = r1
+    */
+
+    inst_mem[0] <= 32'h00000000; // nop
+    inst_mem[1] <= 32'h200a0005; // addi $t2,$zero,5
+    inst_mem[2] <= 32'h200b0007; // addi $t3,$zero,7
+    inst_mem[3] <= 32'h200c0002; // addi $t4,$zero,2
+    inst_mem[4] <= 32'h200d0003; // addi $t5,$zero,3
+    inst_mem[5] <= 32'h014b5020; // add $t2,$t2,$t3
+    inst_mem[6] <= 32'h016c5820; // add $t3,$t3,$t4
+    inst_mem[7] <= 32'h018c6020; // add $t4,$t4,$t4
+    inst_mem[8] <= 32'h01aa6820; // add $t5,$t5,$t2
   end
 endmodule
 
