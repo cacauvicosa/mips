@@ -9,5 +9,6 @@ How to execute on localhost
 ```
 	yarn install
 	yarn build
+	yarn server
 	yarn client
 ```
