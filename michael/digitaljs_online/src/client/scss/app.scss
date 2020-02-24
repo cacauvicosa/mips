@@ -149,4 +149,15 @@ div#monitorbox > div.btn-toolbar {
     }
 }
 
+.dropdown-submenu {
+    display: block;
+}
 
+.dropdown-item {
+    display: none;
+    //position:absolute;
+}
+
+.dropdown-submenu:hover .dropdown-item {
+    display: block;
+}

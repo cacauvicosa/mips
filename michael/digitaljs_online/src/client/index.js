@@ -15,6 +15,8 @@ import { saveAs } from 'file-saver';
 const examples = [
     ['MIPS', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
 	['MIPS', 'pipeline-mips'],
+    //['RISCV', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
+	//['RISCV', 'pipeline-mips']
    //['sr_neg_gate.sv', 'SR latch (negated inputs)'],
    //['dlatch_gate.sv', 'D latch'],
    //['dff_masterslave.sv', 'D flip-flop (master-slave)'],
@@ -56,7 +58,7 @@ for (const [name, file] of examples) {
 	
 	if (submenu.indexOf(name) == -1) {
         submenu.push(name);
-    	$('<div class="dropdown-submenu" type="button" id="exitems_'+name+'"></div>').text(name).appendTo($('#excodes'));
+    	$('<div class="dropdown-submenu" id="exitems_'+name+'"></div>').text(name).appendTo($('#excodes'));
 	}
 	
 	$('<a class="dropdown-item" href=""></a>').text(file).appendTo($('#exitems_'+name)).click((e) => {
