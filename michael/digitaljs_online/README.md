@@ -25,6 +25,6 @@ Example Install Ubuntu
 	npm install yarn
 	
 	# Install yosys
-	~sudo add-apt-repository ppa:saltmakrell/ppa
+	# Not work in Ubuntu 18.04: sudo add-apt-repository ppa:saltmakrell/ppa
 	sudo apt-get install yosys
 ```
