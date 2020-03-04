@@ -2,7 +2,9 @@ MIPS and RISCV Verilog implementations
 
 How to install tools
 
-- Install NodeJS
+- Install NodeJS: https://nodejs.org/en/
+
+- Install Yosys: http://www.clifford.at/yosys/download.html
 
 How to execute on localhost 
 
