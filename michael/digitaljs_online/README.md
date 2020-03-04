@@ -1,16 +1,30 @@
-![][digitaljs-logo]
+#MIPS and RISCV Verilog implementations
 
-[![Build Status](https://travis-ci.com/tilk/digitaljs_online.svg?branch=master)](https://travis-ci.com/tilk/digitaljs_online)
-# digitaljs_online
-This is an online demonstration for [DigitalJS](https://github.com/tilk/digitaljs)
-and [Yosys2digitaljs](https://github.com/tilk/yosys2digitaljs). It is a web app
-with a Node backend. You can [see it running here](http://digitaljs.tilk.eu/).
+How to install tools
 
-# TODO
-Some ideas for the online UI.
+- Install NodeJS: https://nodejs.org/en/
 
-* Checkbox for turning on optimization, or more fine-tuned optimization settings.
-* Checkbox for reducing high-level primitives (arithmetic, multiplexers, etc.) to individual gates.
-* Support for languages other than SystemVerilog (e.g. Clash, Chisel).
+- Install Yosys: http://www.clifford.at/yosys/download.html
 
-[digitaljs-logo]: docs/resources/digitaljs_textpath_right.svg
+How to execute on localhost 
+
+```
+	yarn install
+	yarn build
+	yarn server
+	yarn client
+```
+
+Example Install Ubuntu
+
+```
+	# Install Nodejs
+	sudo snap install node --classic --channel=12
+	
+	# Install yarn
+	npm install yarn
+	
+	# Install yosys
+	~sudo add-apt-repository ppa:saltmakrell/ppa
+	sudo apt-get install yosys
+```
