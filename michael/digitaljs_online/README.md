@@ -15,15 +15,15 @@ How to install tools
 	git clone https://github.com/cacauvicosa/mips
 	cd mips/michael/digitaljs_online/
 
-	# Install Nodejs
+	# Install Nodejs (version stable)
 	sudo snap install node --classic --channel=12
 	
-	# Install yarn
+	# Install yarn (version stable)
 	curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 	echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 	sudo apt update && sudo apt install yarn
 	
-	# Install yosys
+	# Install yosys (Install from source code the version 0.8)
 	sudo apt-get install build-essential clang bison flex libreadline-dev gawk tcl-dev libffi-dev graphviz xdot pkg-config python3 libboost-system-dev libboost-python-dev libboost-filesystem-dev zlib1g-dev
 	unzip yosys-yosys-0.8.zip
 	cd yosys-yosys-0.8
