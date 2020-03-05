@@ -15,6 +15,9 @@ import { saveAs } from 'file-saver';
 const examples = [
     ['MIPS', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
 	['MIPS', 'pipeline-mips'],
+	['MIPS', 'complete-mips'],
+	['RISCV', 'single-riscv'],
+	
     //['RISCV', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
 	//['RISCV', 'pipeline-mips']
    //['sr_neg_gate.sv', 'SR latch (negated inputs)'],
