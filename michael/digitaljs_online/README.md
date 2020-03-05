@@ -2,6 +2,8 @@
 
 How to install tools
 
+- Github project: https://github.com/cacauvicosa/mips
+
 - Install NodeJS: https://nodejs.org/en/
 
 - Install yarn: https://yarnpkg.com/
