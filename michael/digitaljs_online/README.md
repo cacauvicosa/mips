@@ -36,7 +36,7 @@ How to install tools
 ## How to execute on localhost 
 
 ```
-	# Both in terminal separated, after execute the command below in the project's paste, 
+	# Both command in terminal separated! After execute the command below in the project's paste, 
 	# the script will run in loop until you give CTRL + C on the terminal.
 	yarn server
 	yarn client
