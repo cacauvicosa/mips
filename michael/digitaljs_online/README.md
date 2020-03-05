@@ -1,4 +1,4 @@
-#MIPS and RISCV Verilog implementations
+# MIPS and RISCV Verilog implementations
 
 How to install tools
 
@@ -8,7 +8,7 @@ How to install tools
 
 - Install Yosys: http://www.clifford.at/yosys/download.html
 
-##Example Install Ubuntu 18.04 LTS
+## Example Install Ubuntu 18.04 LTS
 
 ```
 	# clone the repository
@@ -31,7 +31,7 @@ How to install tools
 	sudo make install
 ```
 
-##How to execute on localhost 
+## How to execute on localhost 
 
 ```
 	yarn server # terminal 1
