@@ -34,8 +34,9 @@ How to install tools
 ## How to execute on localhost 
 
 ```
-	yarn server # terminal 1
-	yarn client # terminal 2
+	# Both in terminal separated, after execute the command below, the script will run in loop 
+	yarn server
+	yarn client
 ```
 
 
