@@ -11,16 +11,11 @@ import $ from 'jquery';
 import * as digitaljs from 'digitaljs';
 import Split from 'split-grid';
 import { saveAs } from 'file-saver';
+import autocomplete from 'autocompleter';
 
 const examples = [
-    ['MIPS', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
-	['MIPS', 'pipeline-mips'],
-	['MIPS', 'complete-mips'],
-	['RISCV', 'single-riscv'],
-	
-    //['RISCV', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
-	//['RISCV', 'pipeline-mips']
-   //['sr_neg_gate.sv', 'SR latch (negated inputs)'],
+    ['single-mips', 'Single MIPS'],
+    ['riscv-single', 'Single RISC V'],
    //['dlatch_gate.sv', 'D latch'],
    //['dff_masterslave.sv', 'D flip-flop (master-slave)'],
     //['fulladder.sv', 'Full adder'],
@@ -55,24 +50,16 @@ const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
     }
 });
 
-var submenu = []
-
-for (const [name, file] of examples) {
-	
-	if (submenu.indexOf(name) == -1) {
-        submenu.push(name);
-    	$('<div class="dropdown-submenu" id="exitems_'+name+'"></div>').text(name).appendTo($('#excodes'));
-	}
-	
-	$('<a class="dropdown-item" href=""></a>').text(file).appendTo($('#exitems_'+name)).click((e) => {
-		e.preventDefault();
-		$.get('/examples/' + file + '.sv', (data, status) => {
+for (const [file, name] of examples) {
+    $('<a class="dropdown-item" href="">').text(name).appendTo($('#excodes')).click((e) => {
+        e.preventDefault();
+        $.get('/examples/' + file + '.sv', (data, status) => {
             editor.setValue(data);
-		});
-		$.get('/examples/' + file + '.json', (data, status) => {
+        });
+        $.get('/examples/' + file + '.json', (data, status) => {
             destroycircuit();
-		    mkcircuit(data);
-		});
+            mkcircuit(data);
+        });
     });
 }
 
@@ -123,15 +110,84 @@ function destroycircuit() {
     $('#monitorbox button').prop('disabled', true).off();
 }
 
-function mkcircuit(data) {
+var wires_memoria = [];
 
+function preencheLista(fios){
+    wires_memoria = wires_memoria.concat(fios.map(wire => {
+        if (!wire.has('netname')) return;
+        const hier = [];
+        for (let sc = wire.graph.get('subcircuit'); sc != null; sc = sc.graph.get('subcircuit')) {
+            if (!sc.has('label')) return;
+            hier.push(sc.get('label'));
+        }
+        return {
+            name: wire.get('netname'),
+            path: hier.reverse(),
+            bits: wire.get('bits')
+        };
+    }).filter(x => x !== undefined));
+}
+
+function isEmpty(obj) {
+    for(var key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
+}
+
+function processWires(c){
+    let circuitos = []
+    let fios = []
+    if(!isEmpty(c.subcircuits)){
+        circuitos = Object.keys(c.subcircuits)
+        for(const ct of circuitos) processWires(c.subcircuits[ct])
+    }
+    if(!isEmpty(c.wires)){
+        fios = Object.keys(c.wires)
+        let all_fios = [];
+        for (const f of fios) all_fios.push(c.wires[f]);
+        preencheLista(all_fios);
+    } 
+}
+
+function mkcircuit(data) {
     loading = false;
     $('form').find('input, textarea, button, select').prop('disabled', false);
     circuit = new digitaljs.Circuit(data);
+    processWires(circuit.makeLabelIndex());
+
+    let wires_complete = [];
+    wires_memoria.map(x => {
+        wires_complete.push({
+            label: x.name,
+            group: x.path.join('.'),
+            value: x
+        })
+    });
+
+    autocomplete({
+        minLength: 1,
+        emptyMsg: "No wires found",
+        input: document.getElementById("wires-complete"),
+        fetch: function(text, update) {
+            text = text.toLowerCase();
+            var suggestions = wires_complete.filter(n => n.label.toLowerCase().startsWith(text))
+            update(suggestions);
+        },
+        onSelect: function(item) {
+            let itemWire = [];
+            itemWire.push(item.value);
+            monitor.loadWiresDesc(itemWire);
+        }
+    });
+
     circuit.on('postUpdateGates', (tick) => {
         $('#tick').val(tick);
     });
+
     circuit.start();
+
     monitor = new digitaljs.Monitor(circuit);
     if (monitormem) {
         monitor.loadWiresDesc(monitormem);
@@ -199,6 +255,7 @@ function runquery() {
         dataType: 'json',
         success: (responseData, status, xhr) => {
             mkcircuit(responseData.output);
+
         },
         error: (request, status, error) => {
             loading = false;
@@ -214,22 +271,20 @@ function runquery() {
     });
 }
 
-$('button[type=submit]').click(e => {
+$('button[name=synthesize]').click(e => {
     e.preventDefault();
-    $('.query-alert').alert('close');
     $('form').find('input, textarea, button, select').prop('disabled', true);
     filedata = {};
-	/*
-    filenum = document.getElementById('files').files.length;
-    for (const file of document.getElementById('files').files) {
+    //filenum = document.getElementById('files').files.length;
+    /*for (const file of document.getElementById('files').files) {
         const reader = filedata[file.name] = new FileReader();
         reader.onload = x => {
             if (--filenum == 0) runquery();
         };
         reader.readAsText(file);
-    }
-    if (filenum == 0)*/
-	runquery();
+    }*/
+    //if (filenum == 0) 
+        runquery();
 });
 
 $('button[name=pause]').click(e => {

@@ -11,7 +11,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 <meta name="msapplication-TileColor" content="#da532c">
 <meta name="theme-color" content="#ffffff">
-<title>Verilog Simulator</title>
+<title>Simulador Verilog</title>
 </head>
 <body>
 <input type="file" style="display:none" id="input_load" />
@@ -27,6 +27,7 @@
 <button name="fastfw" type="button" class="btn btn-secondary" title="Fast-forward simulation" disabled="true">⏩</button>
 <button name="single" type="button" class="btn btn-secondary" title="Run single time step" disabled="true">→</button>
 <button name="next" type="button" class="btn btn-secondary" title="Run until next event" disabled="true">⇥</button>
+
 </div>
 <div class="input-group mr-2">
 <div class="input-group-prepend">
@@ -38,28 +39,17 @@
 <button name="load" type="button" class="btn btn-secondary" title="Load from file" disabled="true">📁</button>
 <button name="save" type="button" class="btn btn-secondary" title="Save to file" disabled="true">💾</button>
 <button name="link" type="button" class="btn btn-secondary" title="Get link" disabled="true">🔗</button>
+<button name="synthesize" type="button" class="btn btn-primary">Synthesize and simulate!</button>
 </div>
 </div>
 </div>
 <div id="editor">
-<h1 class="text-primary">Verilog Simulator</h1>
-<!--<p>This is a demonstration page for the
-<a href="https://github.com/tilk/digitaljs">DigitalJS</a> digital logic simulator and the
-<a href="https://github.com/tilk/yosys2digitaljs">yosys2digitaljs</a> netlist format converter,
-by <a href="http://www.tilk.eu/">Marek Materzok</a>,
-<a href="http://www.ii.uni.wroc.pl/">University of Wrocław</a>.
-The source files <a href="https://github.com/tilk/digitaljs_online">are on Github</a>.
-Contributions are welcome!
-This demo was made possible by the 
-<a href="http://www.clifford.at/yosys/">Yosys</a> open-source hardware synthesis framework.
-</p>
-<p>Enter your SystemVerilog code, or load an example by using the dropdown menu,
-and press the button to start the simulation.</p>-->
-<form>
+<h1 class="text-primary">Simulador Verilog</h1>
+
 <div class="form-group">
 <div class="dropdown">
   <button class="btn btn-secondary dropdown-toggle" type="button" id="excode" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    Load example code
+    Examples  
   </button>
   <div class="dropdown-menu" aria-labelledby="excode" id="excodes">
   </div>
@@ -67,36 +57,39 @@ and press the button to start the simulation.</p>-->
 </div>
 <div class="form-group">
 <textarea id="code">
-// Write your modules here!
+// Write your module here
 module circuit();
 endmodule
 </textarea>
 </div>
-<div class="form-group">
-  <button type="submit" class="btn btn-primary">Synthesize and simulate!</button>
+<div class="input-group">
+  <div id="autocomplete-area">
+    <label for="wires-complete">Enter the name of the wire to insert into the WaveForm: </label>
+    <input type="text" id="wires-complete">
+  </div>
 </div>
-<!--<div class="form-group">
-  <label for="files">Additional SystemVerilog files:</label>
-  <input type="file" class="form-control-file" id="files" multiple="true">
-</div>
-<div class="form-group form-check">
-  <input type="checkbox" id="opt" class="form-check-input">
-  <label for="opt" class="form-check-label">Optimize</label>
-</div>
-<div class="form-group">
-  <label for="fsm">FSM transform (experimental)</label>
-  <select id="fsm" class="form-control">
-  <option value="">No FSM transform</option>
-  <option value="yes">FSM transform</option>
-  <option value="nomap">FSM as circuit element</option>
-  </select>
-</div>
-<div class="form-group form-check">
-  <input type="checkbox" id="fsmexpand" class="form-check-input">
-  <label for="fsmexpand" class="form-check-label">Merge more logic into FSM</label>
+<!-- <div class="form-group">
+<label for="files">Additional SystemVerilog files:</label>
+<input type="file" class="form-control-file" id="files" multiple="true">
+</div> -->
+<!-- <div class="form-group form-check">
+<input type="checkbox" id="opt" class="form-check-input">
+<label for="opt" class="form-check-label">Optimize</label>
+</div> -->
+<!-- <div class="form-group">
+<label for="fsm">FSM transform (experimental)</label>
+<select id="fsm" class="form-control">
+<option value="">No FSM transform</option>
+<option value="yes">FSM transform</option>
+<option value="nomap">FSM as circuit element</option>
+</select>
+</div> -->
+<!--<div class="form-group form-check">
+<input type="checkbox" id="fsmexpand" class="form-check-input">
+<label for="fsmexpand" class="form-check-label">Merge more logic into FSM</label>
 </div>-->
 </form>
-</div>
+</div> 
 <div id="gutter_horiz" class="gutter gutter-horizontal"></div>
 <div id="paper">
 </div>

@@ -1,5 +1,36 @@
 @import "~bootstrap/scss/bootstrap";
 
+#autocomplete-area{
+    height: 380px;
+}
+
+.autocomplete {
+    background: white;
+    z-index: 1000;
+    font: 14px/22px "-apple-system", BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow: auto;
+    box-sizing: border-box;
+    border: 1px solid rgba(50, 50, 50, 0.6);
+}
+
+.autocomplete * {
+    font: inherit;
+}
+
+.autocomplete > div {
+    padding: 0 4px;
+}
+
+.autocomplete .group {
+    background: #eee;
+}
+
+.autocomplete > div:hover:not(.group),
+.autocomplete > div.selected {
+    background: #81ca91;
+    cursor: pointer;
+}
+
 #grid {
     overflow: hidden;
     display: grid;
@@ -149,15 +180,4 @@ div#monitorbox > div.btn-toolbar {
     }
 }
 
-.dropdown-submenu {
-    display: block;
-}
 
-.dropdown-item {
-    display: none;
-    //position:absolute;
-}
-
-.dropdown-submenu:hover .dropdown-item {
-    display: block;
-}

@@ -1,45 +1,16 @@
-# MIPS and RISCV Verilog implementations
+![][digitaljs-logo]
 
-How to install tools
+[![Build Status](https://travis-ci.com/tilk/digitaljs_online.svg?branch=master)](https://travis-ci.com/tilk/digitaljs_online)
+# digitaljs_online
+This is an online demonstration for [DigitalJS](https://github.com/tilk/digitaljs)
+and [Yosys2digitaljs](https://github.com/tilk/yosys2digitaljs). It is a web app
+with a Node backend. You can [see it running here](http://digitaljs.tilk.eu/).
 
-- Github project: https://github.com/cacauvicosa/mips
+# TODO
+Some ideas for the online UI.
 
-- Install NodeJS: https://nodejs.org/en/
+* Checkbox for turning on optimization, or more fine-tuned optimization settings.
+* Checkbox for reducing high-level primitives (arithmetic, multiplexers, etc.) to individual gates.
+* Support for languages other than SystemVerilog (e.g. Clash, Chisel).
 
-- Install yarn: https://yarnpkg.com/
-
-- Install Yosys: http://www.clifford.at/yosys/download.html
-
-## Example Install Ubuntu 18.04 LTS
-
-```
-	# clone the repository
-	git clone https://github.com/cacauvicosa/mips
-	cd mips/michael/digitaljs_online/
-
-	# Install Nodejs (version stable)
-	sudo snap install node --classic --channel=12
-	
-	# Install yarn (version stable)
-	curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-	echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-	sudo apt update && sudo apt install yarn
-	
-	# Install yosys (Install from source code the version 0.8)
-	sudo apt-get install build-essential clang bison flex libreadline-dev gawk tcl-dev libffi-dev graphviz xdot pkg-config python3 libboost-system-dev libboost-python-dev libboost-filesystem-dev zlib1g-dev
-	unzip yosys-yosys-0.8.zip
-	cd yosys-yosys-0.8
-	make
-	sudo make install
-```
-
-## How to execute on localhost 
-
-```
-	# Both command in terminal separated! After execute the command below in the project's paste, 
-	# the script will run in loop until you give CTRL + C on the terminal.
-	yarn server
-	yarn client
-```
-
-
+[digitaljs-logo]: docs/resources/digitaljs_textpath_right.svg
