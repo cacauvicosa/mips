@@ -14,8 +14,10 @@ import { saveAs } from 'file-saver';
 import autocomplete from 'autocompleter';
 
 const examples = [
-    ['single-mips', 'Single MIPS'],
-    ['riscv-single', 'Single RISC V'],
+    ['MIPS', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
+	['MIPS', 'pipeline-mips'],
+	['MIPS', 'complete-mips'],
+	['RISCV', 'single-riscv'],
    //['dlatch_gate.sv', 'D latch'],
    //['dff_masterslave.sv', 'D flip-flop (master-slave)'],
     //['fulladder.sv', 'Full adder'],
@@ -50,6 +52,28 @@ const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
     }
 });
 
+var submenu = []
+
+for (const [name, file] of examples) {
+	
+	if (submenu.indexOf(name) == -1) {
+        submenu.push(name);
+    	$('<div class="dropdown-submenu" id="exitems_'+name+'"></div>').text(name).appendTo($('#excodes'));
+	}
+	
+	$('<a class="dropdown-item" href=""></a>').text(file).appendTo($('#exitems_'+name)).click((e) => {
+		e.preventDefault();
+		$.get('/examples/' + file + '.sv', (data, status) => {
+            editor.setValue(data);
+		});
+		$.get('/examples/' + file + '.json', (data, status) => {
+            destroycircuit();
+		    mkcircuit(data);
+		});
+    });
+}
+
+/* old
 for (const [file, name] of examples) {
     $('<a class="dropdown-item" href="">').text(name).appendTo($('#excodes')).click((e) => {
         e.preventDefault();
@@ -61,7 +85,7 @@ for (const [file, name] of examples) {
             mkcircuit(data);
         });
     });
-}
+}*/
 
 let loading = false, circuit, paper, monitor, monitorview, monitormem, filedata, filenum;
 
