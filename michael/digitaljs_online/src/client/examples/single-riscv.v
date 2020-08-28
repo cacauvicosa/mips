@@ -73,12 +73,12 @@ module ControlUnit (input [6:0] opcode, input [31:0] inst, output reg alusrc, me
         regwrite <= 1;
         aluop    <= 2;
 			end
-			7'b1100011: begin // beq == 99
+		  7'b1100011: begin // beq == 99
         branch   <= 1;
         aluop    <= 1;
         ImmGen   <= {{19{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'b0};
 			end
-			7'b0010011: begin // addi == 35
+			7'b0010011: begin // addi == 19
         alusrc   <= 1;
         regwrite <= 1;
         ImmGen   <= {{20{inst[31]}},inst[31:20]};
@@ -90,7 +90,7 @@ module ControlUnit (input [6:0] opcode, input [31:0] inst, output reg alusrc, me
         memread  <= 1;
         ImmGen   <= {{20{inst[31]}},inst[31:20]};
       end
-			7'b0100011: begin // sw == 67
+			7'b0100011: begin // sw == 35
         alusrc   <= 1;
         memwrite <= 1;
         ImmGen   <= {{20{inst[31]}},inst[31:25],inst[11:7]};
