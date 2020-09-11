@@ -3,7 +3,7 @@ module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] i
   wire [31:0] pc, pc_4, new_pc;
 
   assign pc_4 = 4 + pc; // pc+4  Adder
-  assign new_pc = (branch & zero) ? pc_4 + sigext : pc_4; // new PC Mux
+  assign new_pc = (branch & zero) ? pc + sigext : pc_4; // new PC Mux
 
   PC program_counter(new_pc, clk, rst, pc);
 
@@ -69,32 +69,32 @@ module ControlUnit (input [6:0] opcode, input [31:0] inst, output reg alusrc, me
     aluop    <= 0;
     ImmGen   <= 0; 
     case(opcode) 
-      7'b0110011: begin // R type == 51
-        regwrite <= 1;
-        aluop    <= 2;
-			end
-		  7'b1100011: begin // beq == 99
-        branch   <= 1;
-        aluop    <= 1;
-        ImmGen   <= {{19{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'b0};
-			end
-			7'b0010011: begin // addi == 19
-        alusrc   <= 1;
-        regwrite <= 1;
-        ImmGen   <= {{20{inst[31]}},inst[31:20]};
-      end
-			7'b0000011: begin // lw == 3
-        alusrc   <= 1;
-        memtoreg <= 1;
-        regwrite <= 1;
-        memread  <= 1;
-        ImmGen   <= {{20{inst[31]}},inst[31:20]};
-      end
-			7'b0100011: begin // sw == 35
-        alusrc   <= 1;
-        memwrite <= 1;
-        ImmGen   <= {{20{inst[31]}},inst[31:25],inst[11:7]};
-      end
+    	7'b0110011: begin // R type == 51
+    	    regwrite <= 1;
+    	    aluop    <= 2;
+		end
+		7'b1100011: begin // beq == 99
+    	    branch   <= 1;
+    	    aluop    <= 1;
+    	    ImmGen   <= {{19{inst[31]}},inst[31],inst[7],inst[30:25],inst[11:8],1'b0};
+		end
+		7'b0010011: begin // addi == 19
+	        alusrc   <= 1;
+	        regwrite <= 1;
+	        ImmGen   <= {{20{inst[31]}},inst[31:20]};
+		end
+		7'b0000011: begin // lw == 3
+        	alusrc   <= 1;
+        	memtoreg <= 1;
+        	regwrite <= 1;
+        	memread  <= 1;
+        	ImmGen   <= {{20{inst[31]}},inst[31:20]};
+      	end
+		7'b0100011: begin // sw == 35
+        	alusrc   <= 1;
+        	memwrite <= 1;
+        	ImmGen   <= {{20{inst[31]}},inst[31:25],inst[11:7]};
+      	end
     endcase
   end
 
