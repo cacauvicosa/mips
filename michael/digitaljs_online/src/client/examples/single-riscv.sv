@@ -103,20 +103,20 @@ endmodule
 module Register_Bank (input clk, regwrite, input [4:0] read_reg1, read_reg2, writereg, input [31:0] writedata, output [31:0] read_data1, read_data2);
 
   integer i;
-  reg [31:0] memory [0:31]; // 32 registers de 32 bits cada
+  reg [31:0] reg_bank [0:31]; // 32 registers de 32 bits cada
 
   // fill the memory
   initial begin
     for (i = 0; i <= 31; i++) 
-      memory[i] <= i;
+      reg_bank[i] <= i;
   end
 
-  assign read_data1 = (regwrite && read_reg1==writereg) ? writedata : memory[read_reg1];
-  assign read_data2 = (regwrite && read_reg2==writereg) ? writedata : memory[read_reg2];
+  assign read_data1 = reg_bank[read_reg1];
+  assign read_data2 = reg_bank[read_reg2];
 	
   always @(posedge clk) begin
     if (regwrite)
-      memory[writereg] <= writedata;
+      reg_bank[writereg] <= writedata;
   end
   
 endmodule
@@ -171,7 +171,7 @@ module ALU (input [3:0] alucontrol, input [31:0] A, B, output reg [31:0] aluout,
         1: aluout <= A | B; // OR
         2: aluout <= A + B; // ADD
         6: aluout <= A - B; // SUB
-        //7: aluout <= A < B ? 32'd1:32'd0; //SLT
+        7: aluout <= A < B ? 32'd1:32'd0; //SLT
         //12: aluout <= ~(A | B); // NOR
       default: aluout <= 0; //default 0, Nada acontece;
     endcase
