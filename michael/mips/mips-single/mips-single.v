@@ -83,21 +83,21 @@ module ControlUnit (input [5:0] opcode, output regdst, alusrc, memtoreg, regwrit
         regwrite <= 1 ;
         aluop <= 2 ;
 			end
-			6'd4: begin // beq
+	  6'd4: begin // beq
         branch <= 1 ;
         aluop <= 1 ;
 			end
-			6'd8: begin // addi
+	  6'd8: begin // addi
         alusrc <= 1 ;
         regwrite <= 1 ;
       end
-			6'd35: begin // lw
+	  6'd35: begin // lw
         alusrc <= 1 ;
         memtoreg <= 1 ;
         regwrite <= 1 ;
         memread <= 1 ;
       end
-			6'd43: begin // sw
+	  6'd43: begin // sw
         alusrc <= 1 ;
         memwrite <= 1 ;
       end
@@ -116,10 +116,15 @@ module Register_Bank (input clk, regwrite, input [4:0] read1, read2, writereg, i
     for (i = 0; i <= 31; i++) 
       memory[i] <= i;
   end
+  
+  //data1 <= (regwrite && read1==writereg) ? writedata : memory[read1];
+  //data2 <= (regwrite && read2==writereg) ? writedata : memory[read2];
+  
+  assign data1 = memory[read1];
+  assign data2 = memory[read2];
 	
   always @(posedge clk) begin
-    data1 <= (regwrite && read1==writereg) ? writedata : memory[read1];
-    data2 <= (regwrite && read2==writereg) ? writedata : memory[read2];
+    
     if (regwrite)
       memory[writereg] <= writedata;
   end
