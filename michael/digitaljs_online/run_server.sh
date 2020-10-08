@@ -1,0 +1,2 @@
+yarn server &
+yarn client &
