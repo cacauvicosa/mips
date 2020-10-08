@@ -54,7 +54,7 @@ Promise.resolve((async () => {
         }
     });
 
-    app.listen(8080, 'localhost');
+    app.listen(8080, '0.0.0.0');
 })());
 
 
