@@ -173,7 +173,7 @@ module ALU (input [3:0] alucontrol, input [31:0] A, B, output reg [31:0] aluout,
         6: aluout <= A - B; // SUB
         7: aluout <= A < B ? 32'd1:32'd0; //SLT
         //12: aluout <= ~(A | B); // NOR
-      default: aluout <= 0; //default 0, Nada acontece;
+      default: aluout <= 0; //default 0, Nop;
     endcase
   end
 endmodule
