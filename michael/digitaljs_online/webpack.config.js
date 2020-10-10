@@ -47,7 +47,8 @@ module.exports = {
         open: true,
         proxy: {
             "/api": "http://localhost:8080"
-        }
+        },
+        allowedHosts: ['.ufv.br' ]
     },
     plugins: [
         new CleanWebpackPlugin(),
