@@ -14,10 +14,10 @@ import { saveAs } from 'file-saver';
 import autocomplete from 'autocompleter';
 
 const examples = [
-    ['MIPS', 'single-mips'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
-	['MIPS', 'pipeline-mips'],
-	['MIPS', 'complete-mips'],
-	['RISCV', 'single-riscv'],
+    ['MIPS', 'single-mips', 'single'], // mesmo nome no inicio, significa que vai fazer um merge entre um e outro 
+	['MIPS', 'pipeline-mips', 'pipeline'],
+	['MIPS', 'complete-mips', 'complete'],
+	['RISCV', 'single-riscv', 'single'],
    //['dlatch_gate.sv', 'D latch'],
    //['dff_masterslave.sv', 'D flip-flop (master-slave)'],
     //['fulladder.sv', 'Full adder'],
@@ -54,14 +54,14 @@ const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
 
 var submenu = []
 
-for (const [name, file] of examples) {
+for (const [name, file, nickname] of examples) {
 	
 	if (submenu.indexOf(name) == -1) {
         submenu.push(name);
     	$('<div class="dropdown-submenu" id="exitems_'+name+'"></div>').text(name).appendTo($('#excodes'));
 	}
 	
-	$('<a class="dropdown-item" href=""></a>').text(file).appendTo($('#exitems_'+name)).click((e) => {
+	$('<a class="dropdown-item" href=""></a>').text(nickname).appendTo($('#exitems_'+name)).click((e) => {
 		e.preventDefault();
 		$.get('/examples/' + file + '.sv', (data, status) => {
             editor.setValue(data);
