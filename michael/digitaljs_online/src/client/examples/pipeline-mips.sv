@@ -1,4 +1,4 @@
-https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-pipeline
+// https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-pipeline
 
 module PC (input [31:0] pc_in, input clk, rst, output reg [31:0] pc_out);
   always @(posedge clk) begin
@@ -398,4 +398,4 @@ module pipemips (input clk, rst, output [31:0] reg_writedata);
 
 endmodule
 
-https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-pipeline
+// https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-pipeline

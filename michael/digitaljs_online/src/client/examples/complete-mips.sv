@@ -1,4 +1,4 @@
-https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-complete
+// https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-complete
 
 // pipe1 F -> D
 module IFID (input f_clk, f_rst, flush, input [31:0] f_pc, f_inst, output reg [31:0] d_pc, d_inst);
@@ -437,4 +437,4 @@ module pipemips (input clk, rst, output [31:0] reg_writedata);
 
 endmodule
 
-https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-complete
+// https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-complete
