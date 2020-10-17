@@ -1,3 +1,5 @@
+// https://github.com/cacauvicosa/mips/tree/master/michael/riscv/riscv-single
+
 module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] inst);
   
   wire [31:0] pc, pc_4, new_pc;
@@ -14,14 +16,8 @@ module fetch (input zero, rst, clk, branch, input [31:0] sigext, output [31:0] i
   initial begin
     // Exemplos
     inst_mem[0] <= 32'h00000000; // nop
-    inst_mem[1] <= 32'h00500113; // addi x2, x0, 5  ok
-    inst_mem[2] <= 32'h00210233; // add  x4, x2, x2  ok
-    //inst_mem[1] <= 32'h00202223; // sw x2, 8(x0) ok
-    //inst_mem[1] <= 32'h0050a423; // sw x5, 8(x1) ok
-    //inst_mem[2] <= 32'h0000a003; // lw x1, x0(0) ok
-    //inst_mem[1] <= 32'hfff00113; // addi x2,x0,-1 ok
-    //inst_mem[2] <= 32'h00318133; // add x2, x3, x3 ok
-    //inst_mem[3] <= 32'h40328133; // sub x2, x5, x3 ok
+    inst_mem[1] <= 32'h00500113; // addi x2, x0, 5  
+    inst_mem[2] <= 32'h00210233; // add  x4, x2, x2 
   end
   
 endmodule
@@ -227,3 +223,5 @@ module mips (input clk, rst, output [31:0] writedata);
   writeback writeback (aluout, readdata, memtoreg, writedata);
 
 endmodule
+
+// https://github.com/cacauvicosa/mips/tree/master/michael/riscv/riscv-single

@@ -1,3 +1,5 @@
+https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-complete
+
 // pipe1 F -> D
 module IFID (input f_clk, f_rst, flush, input [31:0] f_pc, f_inst, output reg [31:0] d_pc, d_inst);
   always @(posedge f_clk) begin
@@ -434,3 +436,5 @@ module pipemips (input clk, rst, output [31:0] reg_writedata);
   writeback writeback (w_readData, w_alures, w_memtoreg, reg_writedata);
 
 endmodule
+
+https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-complete

@@ -1,3 +1,5 @@
+// https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-single
+
 module PC (input [31:0] pc_in, input clk, rst, output reg [31:0] pc_out);
 
   always @(posedge clk) begin
@@ -344,3 +346,5 @@ module mips (input clk, rst, output [31:0] writedata);
   writeback writeback (aluout, readdata, memtoreg, writedata);
 
 endmodule
+
+// https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-single

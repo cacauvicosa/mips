@@ -1,3 +1,5 @@
+https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-pipeline
+
 module PC (input [31:0] pc_in, input clk, rst, output reg [31:0] pc_out);
   always @(posedge clk) begin
     pc_out <= pc_in;
@@ -395,3 +397,5 @@ module pipemips (input clk, rst, output [31:0] reg_writedata);
   writeback writeback (w_readData, w_alures, w_memtoreg, reg_writedata);
 
 endmodule
+
+https://github.com/cacauvicosa/mips/tree/master/michael/mips/mips-pipeline
