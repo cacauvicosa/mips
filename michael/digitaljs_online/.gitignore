@@ -2,3 +2,4 @@
 /node_modules
 *.sqlite
 yarn.lock
+package-lock.json
